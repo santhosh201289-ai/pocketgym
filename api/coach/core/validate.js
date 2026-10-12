@@ -223,7 +223,7 @@ export function validatePlan(data, ctx = {}) {
   return {
     ok: true,
     bundle: {
-      opengym_plan: 1,
+      pocketgym_plan: 1,
       name: clampStr(data.name || 'Coach plan', 40),
       summary: clampStr(data.summary || '', 1200),
       basedOn: clampStr(data.basedOn || '', 400),

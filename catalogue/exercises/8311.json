@@ -17,5 +17,5 @@
     "Pause briefly, then return to upright.",
     "Repeat on the other side and keep alternating."
   ],
-  "textSource": "opengym"
+  "textSource": "pocketgym"
 }

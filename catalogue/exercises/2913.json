@@ -20,5 +20,5 @@
     "Cover the set distance, then lower the weight with control.",
     "Switch arms and repeat."
   ],
-  "textSource": "opengym"
+  "textSource": "pocketgym"
 }

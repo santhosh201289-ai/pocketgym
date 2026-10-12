@@ -19,5 +19,5 @@
     "When the weight reaches the bar, lower it slowly by unwinding.",
     "Stop if your forearms burn too much to keep control."
   ],
-  "textSource": "opengym"
+  "textSource": "pocketgym"
 }

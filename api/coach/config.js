@@ -16,7 +16,7 @@
                  somebody's personal subscription is being spent by people who are not the
                  subscriber.
 
-   openGym does not interpret any provider's terms on a self-hoster's behalf. It just makes
+   Pocket Gym does not interpret any provider's terms on a self-hoster's behalf. It just makes
    the shape that doesn't need the interpretation available, and refuses the shape that does:
    in instance mode a *personal* credential (a Claude Code setup token, an OAuth login) binds
    to the first profile that uses it, and any other profile is refused rather than warned. A
@@ -115,7 +115,7 @@ function key() {
   if (keyCache) return keyCache;
   // Read the secret lazily: server.js creates it at boot, and this module may be imported first.
   const secret = fs.readFileSync(path.join(DATA, 'secret'), 'utf8').trim();
-  keyCache = Buffer.from(crypto.hkdfSync('sha256', Buffer.from(secret, 'utf8'), Buffer.alloc(0), Buffer.from('opengym-coach-v1'), 32));
+  keyCache = Buffer.from(crypto.hkdfSync('sha256', Buffer.from(secret, 'utf8'), Buffer.alloc(0), Buffer.from('pocketgym-coach-v1'), 32));
   return keyCache;
 }
 export function encrypt(obj) {

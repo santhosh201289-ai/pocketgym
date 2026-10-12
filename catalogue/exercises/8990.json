@@ -19,5 +19,5 @@
     "Return slowly without letting the weight stack touch down.",
     "Finish the reps, then switch sides."
   ],
-  "textSource": "opengym"
+  "textSource": "pocketgym"
 }

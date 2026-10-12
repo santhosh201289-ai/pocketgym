@@ -1,6 +1,6 @@
-# Contributing to openGym
+# Contributing to Pocket Gym
 
-Thanks for taking a look. openGym is deliberately small and light on dependencies, and the aim is
+Thanks for taking a look. Pocket Gym is deliberately small and light on dependencies, and the aim is
 to keep it that way: easy to read, easy to self-host.
 
 ## Project layout
@@ -58,8 +58,8 @@ cd mcp && npm test
 
 ## Using AI tools
 
-openGym itself is developed with Claude Code (see
-[How openGym is built](README.md#how-opengym-is-built)), and [`CLAUDE.md`](CLAUDE.md) holds the
+Pocket Gym itself is developed with Claude Code (see
+[How Pocket Gym is built](README.md#how-pocketgym-is-built)), and [`CLAUDE.md`](CLAUDE.md) holds the
 project context for it. You're welcome to use whatever tools you like for a pull request. The bar
 is the same either way: you understand the change, it's tested, and you can answer questions about
 it in review.
@@ -96,11 +96,11 @@ should come as a GitHub pull request.
 | You have | Goes to |
 | --- | --- |
 | A quick question, or you'd rather chat | [Discord](https://discord.gg/e62jY6fwVb) |
-| A question, or self-hosting that won't behave | [Discussions → Q&A](https://github.com/DuarteSantos8/openGym/discussions/categories/q-a) |
-| An idea you're not sure about yet | [Discussions → Ideas](https://github.com/DuarteSantos8/openGym/discussions/categories/ideas) |
-| A reproducible bug | [Issues](https://github.com/DuarteSantos8/openGym/issues) |
-| A change you've already built | [A pull request](https://github.com/DuarteSantos8/openGym/pulls) |
-| A security problem | [Private report](https://github.com/DuarteSantos8/openGym/security/advisories/new), see [SECURITY.md](SECURITY.md) |
+| A question, or self-hosting that won't behave | [Discussions → Q&A](https://github.com/santhosh201289-ai/pocketgym/discussions/categories/q-a) |
+| An idea you're not sure about yet | [Discussions → Ideas](https://github.com/santhosh201289-ai/pocketgym/discussions/categories/ideas) |
+| A reproducible bug | [Issues](https://github.com/santhosh201289-ai/pocketgym/issues) |
+| A change you've already built | [A pull request](https://github.com/santhosh201289-ai/pocketgym/pulls) |
+| A security problem | [Private report](https://github.com/santhosh201289-ai/pocketgym/security/advisories/new), see [SECURITY.md](SECURITY.md) |
 
 An answered question in Discussions is worth more than the same answer in a chat log, because the
 next person searching "passkey login fails behind my reverse proxy" finds it. If a Discord answer

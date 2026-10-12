@@ -20,5 +20,5 @@
     "Pause, then let the arm extend slowly.",
     "Finish all reps, then switch sides."
   ],
-  "textSource": "opengym"
+  "textSource": "pocketgym"
 }

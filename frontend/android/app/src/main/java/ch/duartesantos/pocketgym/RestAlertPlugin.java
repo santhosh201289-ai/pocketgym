@@ -1,4 +1,4 @@
-package ch.duartesantos.opengym;
+package ch.duartesantos.pocketgym;
 
 import android.content.Context;
 import android.content.Intent;

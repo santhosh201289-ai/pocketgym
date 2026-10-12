@@ -1,7 +1,7 @@
 // Share a weekly plan.
 //
 // Two jobs:
-//  1. A small, self-contained file a friend can import into THEIR openGym — just the
+//  1. A small, self-contained file a friend can import into THEIR Pocket Gym — just the
 //     routines + the week schedule + the custom exercises those routines use. It never
 //     carries workouts, weigh-ins or settings, and importing MERGES (adds routines with
 //     fresh ids) so nothing the friend already has is touched.
@@ -30,7 +30,7 @@ const PLAN_UNITS = new Set(['kg', 'lb'])
 // A plan's numbers are in the unit that wrote it. Missing unit is deliberately legacy-compatible:
 // old files were read as already being in the recipient's unit, so keep their values unchanged.
 const planUnit = value => value === 'lbs' ? 'lb' : PLAN_UNITS.has(value) ? value : null
-const unitError = () => { throw new Error(t('this isn’t an openGym plan file')) }
+const unitError = () => { throw new Error(t('this isn’t an Pocket Gym plan file')) }
 
 function declaredPlanUnit(data) {
   let declared = null
@@ -208,7 +208,7 @@ export function buildPlanBundle(S, name) {
   // written after are read the same way at the other end.
   const week = {}
   WEEK_DAYS.forEach(d => { if (S.week?.[d]?.length) week[d] = [].concat(S.week[d]) })
-  return { opengym_plan: PLAN_FMT, exported: todayISO(), name: name || '', unit, week, routines, customEx }
+  return { pocketgym_plan: PLAN_FMT, exported: todayISO(), name: name || '', unit, week, routines, customEx }
 }
 
 /**
@@ -221,11 +221,11 @@ export function buildPlanBundle(S, name) {
  * is trained.
  */
 export function parsePlan(raw, destinationUnit = 'kg') {
-  const notPlan = () => Object.assign(new Error(t('this isn’t an openGym plan file')), { code: 'not-plan' })
+  const notPlan = () => Object.assign(new Error(t('this isn’t an Pocket Gym plan file')), { code: 'not-plan' })
   let data = raw
   if (typeof raw === 'string') { try { data = JSON.parse(raw) } catch { throw notPlan() } }
   const destination = planUnit(destinationUnit)
-  if (!data || typeof data !== 'object' || Array.isArray(data) || !data.opengym_plan || !Array.isArray(data.routines) || !destination) {
+  if (!data || typeof data !== 'object' || Array.isArray(data) || !data.pocketgym_plan || !Array.isArray(data.routines) || !destination) {
     throw notPlan()
   }
   const sourceUnit = declaredPlanUnit(data)
@@ -466,13 +466,13 @@ export function planPrintHTML(S, owner, { routineId } = {}) {
 </style></head>
 <body><div class="doc">
   <header>
-    <div class="kicker">openGym</div>
+    <div class="kicker">Pocket Gym</div>
     <h1>${esc(title)}</h1>
     ${sub ? `<div class="sub">${sub}</div>` : ''}
   </header>
   ${week}
   ${body}
-  <footer>${esc(t('Made with openGym'))} · opengym.ch</footer>
+  <footer>${esc(t('Made with Pocket Gym'))} · opengym.ch</footer>
 </div></body></html>`
 }
 

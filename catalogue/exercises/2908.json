@@ -19,5 +19,5 @@
     "Walk the set distance, then reset and repeat.",
     "Switch sides and do the same distance."
   ],
-  "textSource": "opengym"
+  "textSource": "pocketgym"
 }

@@ -15,7 +15,7 @@ const state = () => ({
   routines: [{ id: 'r1', name: 'Old', ex: [{ id: ALIAS, sets: 3, reps: 10, mode: 'reps' }, { id: '0001', sets: 3, reps: 10, mode: 'reps' }] }],
   coach: { consent: { agreedAt: '2026-07-01T00:00:00Z', version: CONSENT_VERSION }, log: [], snapshots: [], cadence: 'off' },
 })
-const plan = ex => JSON.stringify({ opengym_plan: 1, unit: 'kg', routines: [{ id: 'p1', name: 'Shared', ex }], customEx: [] })
+const plan = ex => JSON.stringify({ pocketgym_plan: 1, unit: 'kg', routines: [{ id: 'p1', name: 'Shared', ex }], customEx: [] })
 
 describe('canonicalExId', () => {
   it('turns a drawing id into its exercise and leaves everything else alone', () => {
@@ -39,7 +39,7 @@ describe('a drawing id on its way in', () => {
   })
 
   it('a plan file whose own custom exercise happens to carry such an id keeps it as a custom one', () => {
-    const raw = JSON.stringify({ opengym_plan: 1, unit: 'kg', routines: [{ id: 'p1', name: 'Shared', ex: [{ id: ALIAS, sets: 3 }] }], customEx: [{ id: ALIAS, n: 'my thing', bp: 'chest' }] })
+    const raw = JSON.stringify({ pocketgym_plan: 1, unit: 'kg', routines: [{ id: 'p1', name: 'Shared', ex: [{ id: ALIAS, sets: 3 }] }], customEx: [{ id: ALIAS, n: 'my thing', bp: 'chest' }] })
     const bundle = parsePlan(raw)
     expect(bundle.routines[0].ex[0].id).toBe(ALIAS)
     const s = state()

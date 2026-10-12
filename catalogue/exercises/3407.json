@@ -17,5 +17,5 @@
     "Return through the centre and rotate to the other side.",
     "Move smoothly for 10-15 reps per side."
   ],
-  "textSource": "opengym"
+  "textSource": "pocketgym"
 }

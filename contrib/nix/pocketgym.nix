@@ -2,19 +2,19 @@
   config,
   lib,
   pkgs,
-  # Injected by the flake (see nixosModules.opengym in flake.nix) so module users get the
+  # Injected by the flake (see nixosModules.pocketgym in flake.nix) so module users get the
   # packages built from the flake's *locked* nixpkgs input. Falls back to this system's pkgs
-  # (via _module.args below) when the module is imported directly (imports = [ …/opengym.nix ]).
-  opengymPkgs,
+  # (via _module.args below) when the module is imported directly (imports = [ …/pocketgym.nix ]).
+  pocketgymPkgs,
   ...
 }:
 
 let
-  cfg = config.services.opengym;
+  cfg = config.services.pocketgym;
 
-  hostOpengymPkgs = import ./default.nix { inherit pkgs; };
+  hostPocketgymPkgs = import ./default.nix { inherit pkgs; };
 
-  defaultOpengymPkgs = if opengymPkgs != null then opengymPkgs else hostOpengymPkgs;
+  defaultPocketgymPkgs = if pocketgymPkgs != null then pocketgymPkgs else hostPocketgymPkgs;
 
   packages = cfg.package;
 
@@ -62,7 +62,7 @@ let
     name: why:
     lib.mkRemovedOptionModule [
       "services"
-      "opengym"
+      "pocketgym"
       "media"
       name
     ] why;
@@ -72,26 +72,26 @@ in
   imports = [
     (removedMedia "fetchAtBuild" "The exercise media are part of the frontend package now; nothing is fetched.")
     (removedMedia "dataDir" "The exercise media are part of the frontend package now; there is no runtime media directory.")
-    (removedMedia "imageRoot" "Use services.opengym.media.root (stills in still/, animations in clip/).")
-    (removedMedia "gifRoot" "Use services.opengym.media.root (stills in still/, animations in clip/).")
+    (removedMedia "imageRoot" "Use services.pocketgym.media.root (stills in still/, animations in clip/).")
+    (removedMedia "gifRoot" "Use services.pocketgym.media.root (stills in still/, animations in clip/).")
   ];
 
-  options.services.opengym = {
-    enable = lib.mkEnableOption "openGym self-hosted gym tracker";
+  options.services.pocketgym = {
+    enable = lib.mkEnableOption "Pocket Gym self-hosted gym tracker";
 
     package = lib.mkOption {
       type = lib.types.attrsOf lib.types.package;
-      default = defaultOpengymPkgs;
+      default = defaultPocketgymPkgs;
       defaultText = lib.literalExpression ''
         the flake's packages (built from its locked nixpkgs) when the module comes from the
         flake; otherwise built from this system's nixpkgs
       '';
-      description = "openGym package set (typically the flake output).";
+      description = "Pocket Gym package set (typically the flake output).";
     };
 
     dataDir = lib.mkOption {
       type = lib.types.path;
-      default = "/var/lib/opengym";
+      default = "/var/lib/pocketgym";
       description = "Persistent data directory (db.json, state files, secrets).";
     };
 
@@ -115,7 +115,7 @@ in
 
     rpName = lib.mkOption {
       type = lib.types.str;
-      default = "openGym";
+      default = "Pocket Gym";
       description = "Display name for passkey registration prompts.";
     };
 
@@ -177,7 +177,7 @@ in
       type = lib.types.attrsOf lib.types.str;
       default = { };
       description = ''
-        Extra environment variables set on the opengym-api systemd unit. Useful for variables the
+        Extra environment variables set on the pocketgym-api systemd unit. Useful for variables the
         module does not manage yet. Variables this module already derives from its own options take
         precedence. Mutually exclusive with environmentFile.
       '';
@@ -187,13 +187,13 @@ in
       type = lib.types.str;
       default = "";
       description = ''
-        Path to an env file (KEY=VALUE per line) read by the opengym-api systemd unit. Mutually
+        Path to an env file (KEY=VALUE per line) read by the pocketgym-api systemd unit. Mutually
         exclusive with environment.
       '';
     };
 
     nginx = {
-      enable = lib.mkEnableOption "an nginx virtualHost for openGym, managed via services.nginx";
+      enable = lib.mkEnableOption "an nginx virtualHost for Pocket Gym, managed via services.nginx";
 
       hostName = lib.mkOption {
         type = lib.types.str;
@@ -205,7 +205,7 @@ in
         type = lib.types.bool;
         default = false;
         description = ''
-          Serve openGym over TLS with a Let's Encrypt certificate (services.nginx enableACME +
+          Serve Pocket Gym over TLS with a Let's Encrypt certificate (services.nginx enableACME +
           forceSSL). Also requires security.acme.acceptTerms = true in your configuration.
         '';
       };
@@ -232,13 +232,13 @@ in
     };
 
     mcp = {
-      enable = lib.mkEnableOption "openGym MCP server (stdio bridge for LLM clients)";
+      enable = lib.mkEnableOption "Pocket Gym MCP server (stdio bridge for LLM clients)";
 
       uid = lib.mkOption {
         type = lib.types.nullOr lib.types.str;
         default = null;
         description = ''
-          The openGym user ID (from db.json "users"[].id) the MCP server serves.
+          The Pocket Gym user ID (from db.json "users"[].id) the MCP server serves.
           When null, the server auto-picks when exactly one user exists; with multiple
           users this option must be set. Use the `environment` escape hatch for the
           same effect.
@@ -249,51 +249,51 @@ in
 
   config = lib.mkMerge [
     {
-      # Fallback for `opengymPkgs` when the module is imported directly (no flake wrapper):
+      # Fallback for `pocketgymPkgs` when the module is imported directly (no flake wrapper):
       # build the packages from this system's pkgs. The flake's wrapper supplies the same
       # argument at higher priority with packages from its locked nixpkgs.
-      _module.args.opengymPkgs = lib.mkDefault hostOpengymPkgs;
+      _module.args.pocketgymPkgs = lib.mkDefault hostPocketgymPkgs;
 
       assertions = [
         {
           assertion = cfg.environment == { } || cfg.environmentFile == "";
-          message = "services.opengym.environment and services.opengym.environmentFile are mutually exclusive; use only one.";
+          message = "services.pocketgym.environment and services.pocketgym.environmentFile are mutually exclusive; use only one.";
         }
         {
           assertion = !cfg.nginx.enable || cfg.nginx.hostName != "";
-          message = "services.opengym.nginx.hostName must be set when services.opengym.nginx.enable is true.";
+          message = "services.pocketgym.nginx.hostName must be set when services.pocketgym.nginx.enable is true.";
         }
         {
           assertion = !cfg.nginx.enableACME || cfg.nginx.enable;
-          message = "services.opengym.nginx.enable must be true to use services.opengym.nginx.enableACME.";
+          message = "services.pocketgym.nginx.enable must be true to use services.pocketgym.nginx.enableACME.";
         }
       ];
     }
     (lib.mkIf cfg.enable (
       lib.mkMerge [
         {
-          users.users.opengym = {
+          users.users.pocketgym = {
             isSystemUser = true;
-            group = "opengym";
-            description = "openGym service user";
+            group = "pocketgym";
+            description = "Pocket Gym service user";
           };
 
-          users.groups.opengym = { };
+          users.groups.pocketgym = { };
 
           systemd.tmpfiles.rules = [
-            "d ${cfg.dataDir} 0750 opengym opengym - -"
+            "d ${cfg.dataDir} 0750 pocketgym pocketgym - -"
           ];
 
-          systemd.services.opengym-api = {
-            description = "openGym API server";
+          systemd.services.pocketgym-api = {
+            description = "Pocket Gym API server";
             after = [ "network.target" ];
             wantedBy = [ "multi-user.target" ];
             environment = cfg.environment // apiEnv;
             serviceConfig = lib.mkMerge [
               {
-                ExecStart = "${packages.opengym-api}/bin/opengym-api";
-                User = "opengym";
-                Group = "opengym";
+                ExecStart = "${packages.pocketgym-api}/bin/pocketgym-api";
+                User = "pocketgym";
+                Group = "pocketgym";
                 Restart = "on-failure";
                 RestartSec = 5;
                 EnvironmentFile = lib.mkIf (cfg.environmentFile != "") cfg.environmentFile;
@@ -302,40 +302,40 @@ in
               serviceHardening
               # systemd's StateDirectory= only lives under /var/lib, so use it for the default
               # dataDir; a custom dataDir is created by the tmpfiles rule instead.
-              (lib.mkIf (builtins.toString cfg.dataDir == "/var/lib/opengym") {
-                StateDirectory = "opengym";
+              (lib.mkIf (builtins.toString cfg.dataDir == "/var/lib/pocketgym") {
+                StateDirectory = "pocketgym";
                 StateDirectoryMode = "0750";
               })
             ];
           };
 
-          services.opengym.web.root = "${packages.opengym-frontend}/share/opengym";
-          services.opengym.media.root = "${cfg.web.root}/exercise-media";
+          services.pocketgym.web.root = "${packages.pocketgym-frontend}/share/pocketgym";
+          services.pocketgym.media.root = "${cfg.web.root}/exercise-media";
 
-          systemd.services.opengym-mcp = lib.mkIf cfg.mcp.enable {
-            description = "openGym MCP server";
+          systemd.services.pocketgym-mcp = lib.mkIf cfg.mcp.enable {
+            description = "Pocket Gym MCP server";
             after = [ "network.target" ];
             wantedBy = [ "multi-user.target" ];
             environment = {
-              # The MCP server reads OPENGYM_DATA (not DATA_DIR) to locate the data files.
-              OPENGYM_DATA = cfg.dataDir;
+              # The MCP server reads POCKETGYM_DATA (not DATA_DIR) to locate the data files.
+              POCKETGYM_DATA = cfg.dataDir;
             } // lib.optionalAttrs (cfg.mcp.uid != null) {
-              OPENGYM_UID = cfg.mcp.uid;
+              POCKETGYM_UID = cfg.mcp.uid;
             };
             serviceConfig = lib.mkMerge [
               {
-                ExecStart = "${packages.opengym-mcp}/bin/opengym-mcp";
+                ExecStart = "${packages.pocketgym-mcp}/bin/pocketgym-mcp";
                 StandardInput = "null";
                 StandardOutput = "journal";
-                User = "opengym";
-                Group = "opengym";
+                User = "pocketgym";
+                Group = "pocketgym";
                 Restart = "on-failure";
               }
               serviceHardening
             ];
           };
         }
-        # Optional: let the module configure an nginx virtualHost for openGym itself.
+        # Optional: let the module configure an nginx virtualHost for Pocket Gym itself.
         (lib.mkIf cfg.nginx.enable {
           services.nginx = {
             enable = true;

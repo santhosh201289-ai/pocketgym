@@ -19,5 +19,5 @@
     "Throw the ball hard into the wall at chest height.",
     "Catch it, reset, and switch sides after your set."
   ],
-  "textSource": "opengym"
+  "textSource": "pocketgym"
 }

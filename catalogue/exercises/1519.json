@@ -18,5 +18,5 @@
     "Stop when your torso is near parallel with the floor.",
     "Drive your hips forward to stand, then return the bar to the pins when done."
   ],
-  "textSource": "opengym"
+  "textSource": "pocketgym"
 }

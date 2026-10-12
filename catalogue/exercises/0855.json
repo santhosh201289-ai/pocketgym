@@ -17,5 +17,5 @@
     "Return to centre and rotate to the other side.",
     "Move smoothly without jerking."
   ],
-  "textSource": "opengym"
+  "textSource": "pocketgym"
 }

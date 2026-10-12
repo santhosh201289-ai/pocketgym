@@ -1,4 +1,4 @@
-/* The browser's backend for lib/media-store.js: IndexedDB database 'opengym-media', object store
+/* The browser's backend for lib/media-store.js: IndexedDB database 'pocketgym-media', object store
  * 'blobs', one record per file keyed by its hash — { hash, blob, mime, size, putAt, shownAt,
  * pending, rejected }.
  *
@@ -9,7 +9,7 @@
  * refuses Blobs in it — and then open() answers false and the store falls back to memory.
  */
 
-const DB = 'opengym-media'
+const DB = 'pocketgym-media'
 const STORE = 'blobs'
 
 const req = r => new Promise((resolve, reject) => { r.onsuccess = () => resolve(r.result); r.onerror = () => reject(r.error) })

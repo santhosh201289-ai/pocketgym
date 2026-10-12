@@ -1,4 +1,4 @@
-package ch.duartesantos.opengym;
+package ch.duartesantos.pocketgym;
 
 /**
  * The end-of-rest tone the native side plays while the app is in the background or the screen

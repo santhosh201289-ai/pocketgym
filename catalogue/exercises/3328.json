@@ -20,5 +20,5 @@
     "Take a controlled step forward with the bar racked.",
     "Step back, lower the bar and begin the next round."
   ],
-  "textSource": "opengym"
+  "textSource": "pocketgym"
 }

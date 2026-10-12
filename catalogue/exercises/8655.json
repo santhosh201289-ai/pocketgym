@@ -17,5 +17,5 @@
     "Draw small circles, then gradually bigger.",
     "Reverse the direction after a set."
   ],
-  "textSource": "opengym"
+  "textSource": "pocketgym"
 }

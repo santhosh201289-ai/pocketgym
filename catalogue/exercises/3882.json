@@ -19,5 +19,5 @@
     "Return slowly to the start.",
     "Avoid using momentum."
   ],
-  "textSource": "opengym"
+  "textSource": "pocketgym"
 }

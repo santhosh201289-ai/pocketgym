@@ -20,5 +20,5 @@
     "Continue the chain without putting the weights down.",
     "Rest, then repeat the sequence."
   ],
-  "textSource": "opengym"
+  "textSource": "pocketgym"
 }

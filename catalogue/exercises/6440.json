@@ -18,5 +18,5 @@
     "Return slowly to the start without letting the band snap.",
     "Complete all reps, then turn around and switch arms."
   ],
-  "textSource": "opengym"
+  "textSource": "pocketgym"
 }

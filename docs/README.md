@@ -1,4 +1,4 @@
-# openGym documentation
+# Pocket Gym documentation
 
 Pick the part that matches what you're doing. If you just have a question, try the
 [FAQ](FAQ.md) first.
@@ -24,7 +24,7 @@ to install.
 | [Kubernetes](SELF_HOSTING_KUBERNETES.md) | You run a cluster instead of Docker Compose |
 | [AI coach](AI_COACH.md) | You're deciding whether to turn the coach on, and with which provider |
 | [MCP server](../mcp/README.md) | You want Claude Desktop, Cursor or another AI client to read your training history |
-| [NixOS](NIX.md) | You run NixOS and want openGym native — flake packages and a NixOS module, no Docker |
+| [NixOS](NIX.md) | You run NixOS and want Pocket Gym native — flake packages and a NixOS module, no Docker |
 | [Security](../SECURITY.md) | You host it for other people, or want to report a vulnerability |
 
 All settings live in `.env`; [`.env.example`](../.env.example) explains each one, and the
@@ -51,5 +51,5 @@ Design notes for specific features, kept next to the code they describe:
 ## Still stuck?
 
 Ask on the [Discord](https://discord.gg/e62jY6fwVb) or in
-[Discussions](https://github.com/DuarteSantos8/openGym/discussions). If something in these docs was
+[Discussions](https://github.com/santhosh201289-ai/pocketgym/discussions). If something in these docs was
 wrong or missing, that's worth an issue too.

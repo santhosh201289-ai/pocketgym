@@ -18,5 +18,5 @@
     "Rotate your torso with the movement.",
     "Return under control and switch sides after the set."
   ],
-  "textSource": "opengym"
+  "textSource": "pocketgym"
 }

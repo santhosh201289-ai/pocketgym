@@ -18,5 +18,5 @@
     "Pause when your hand points slightly outward, then return slowly.",
     "Finish all reps, then switch sides."
   ],
-  "textSource": "opengym"
+  "textSource": "pocketgym"
 }

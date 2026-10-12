@@ -1,7 +1,7 @@
 # The phone app (Android and iOS)
 
 **Just want the app?** Download the APK from the
-[latest release](https://github.com/DuarteSantos8/openGym/releases/latest) and read
+[latest release](https://github.com/santhosh201289-ai/pocketgym/releases/latest) and read
 [how the phone app works](#how-the-phone-app-works) and
 [connecting it to your server](#connecting-the-app-to-your-own-server). On an iPhone, see
 [what's possible](#iphone--whats-actually-possible). Everything from [Prerequisites](#prerequisites)
@@ -9,7 +9,7 @@ on is for building the app yourself.
 
 ## How the phone app works
 
-openGym ships in two flavors from the same codebase:
+Pocket Gym ships in two flavors from the same codebase:
 
 | | **Self-hosted** (this repo's default) | **Mobile app** (`VITE_MOBILE=1`) |
 |---|---|---|
@@ -20,7 +20,7 @@ openGym ships in two flavors from the same codebase:
 | Exercise media | served by your server (`exercise-media/`) | packed into the app (`exercise-media/`) |
 
 The mobile flavor never talks to a backend by default: no sign-in screen, no sync, no
-telemetry. State is mirrored from `localStorage` into `opengym-state.json` in the app's
+telemetry. State is mirrored from `localStorage` into `pocketgym-state.json` in the app's
 private data directory on every change (iOS is allowed to evict WebView storage under
 pressure — the file mirror is the durable copy and is restored on launch). Backups go out
 through the OS share sheet instead of a browser download.
@@ -28,7 +28,7 @@ through the OS share sheet instead of a browser download.
 ### Connecting the app to your own server
 
 On first launch the app asks how you want to use it. Alongside the fully local mode above,
-you can instead **connect it to a self-hosted openGym server** — your data then lives there,
+you can instead **connect it to a self-hosted Pocket Gym server** — your data then lives there,
 synced the same way the browser PWA does, instead of only on the phone. This is a mode of the
 same app, not a different build or download.
 
@@ -48,10 +48,10 @@ or Settings → Account → **"Connect to my server"** later) to finish. Notes:
   you that http is not encrypted, so keep it to your own network. Your browser still needs a
   password to sign in there and make the code: passkeys only work over https (or `localhost`).
 - Pairing says your server "refused the app's request (CORS)", or that "a login page or proxy
-  rule replied instead of openGym", or fails with "Failed to fetch" on an older version, while
-  the browser works? Something in front of openGym is answering the app instead: a reverse proxy
+  rule replied instead of Pocket Gym", or fails with "Failed to fetch" on an older version, while
+  the browser works? Something in front of Pocket Gym is answering the app instead: a reverse proxy
   handling the CORS preflight itself, adding a second `Access-Control-Allow-Origin`, or SSO /
-  forward-auth on `/api/`. openGym answers the preflight and does its own sign-in; see
+  forward-auth on `/api/`. Pocket Gym answers the preflight and does its own sign-in; see
   [Phone app and CORS](SELF_HOSTING.md#phone-app-and-cors) for the fixes and a `curl` self-check.
 - The token lasts `SESSION_DAYS` (90 by default, see `docs/SELF_HOSTING.md`) and renews
   itself: every time the app starts, a token past half its life is swapped for a fresh one.
@@ -76,12 +76,12 @@ If your server sits behind [Cloudflare Access](https://developers.cloudflare.com
 
 1. In Zero Trust → Access → Service Auth, create a service token and note its Client ID and
    Client Secret.
-2. In the Access application for your openGym host, add a policy with the **Service Auth**
+2. In the Access application for your Pocket Gym host, add a policy with the **Service Auth**
    action that includes that token.
 3. In the application's **CORS settings**, enable **Bypass OPTIONS requests to origin**. The
    app runs on its own origin, so every request is preceded by a CORS preflight, and a
    preflight never carries the token — without the bypass, Access refuses it and nothing
-   gets through. The openGym API answers the preflight itself and allows both headers.
+   gets through. The Pocket Gym API answers the preflight itself and allows both headers.
 4. In the app, before connecting: first-launch screen → **Connection settings** (or the
    **Cloudflare Access** button in the Connect sheet), enter your server's address and the two
    values, then pair as usual. They can be changed later under Settings → **Server & sync** →
@@ -104,7 +104,7 @@ status bar says so on every screen, and stays until the condition is gone:
 |---|---|---|
 | *Offline — your changes are saved on this device…* | No answer at all: no network, the server is down, or it did not answer within 20 s (60 s for an upload). | Nothing — it syncs by itself once the server is reachable. **Try again** checks at once. |
 | *Your server answered with an error (HTTP 502)…* | The server (or the proxy in front of it) answered with an error. The code is the one the server sent. | Check the server and its proxy logs; **Try again** once it is back. A 413 means the proxy's upload limit is too small (`client_max_body_size`). |
-| *Your server's address answered with something other than openGym (HTTP 200)…* | Something else answered in the server's place — typically a proxy's sign-in page or a catch-all that serves the web app for `/api/*`. | Let `/api/*` through to the openGym API unchanged, including the `Authorization` header. |
+| *Your server's address answered with something other than Pocket Gym (HTTP 200)…* | Something else answered in the server's place — typically a proxy's sign-in page or a catch-all that serves the web app for `/api/*`. | Let `/api/*` through to the Pocket Gym API unchanged, including the `Authorization` header. |
 | *Your server no longer accepts this phone…* | The server refused the phone's token (401): "sign out everywhere", the account disabled, a `data/secret` that was replaced, a token older than `SESSION_DAYS`, or a proxy with its own login that rejects `Authorization: Bearer`. | **Pair again**: in a signed-in browser open Settings → "Pair the mobile app" and enter the new code. The address is already filled in. |
 | *This phone is no longer paired with your server…* | A phone that an earlier version of the app unpaired by itself after its token was refused. The address is gone. | **Pair again**, typing the address. |
 | *On this phone only, not connected to a server* | Local mode, chosen at first launch or after Disconnect. Said quietly. | Nothing, or **Connect** to pair with a server. |
@@ -123,13 +123,13 @@ account's unsent changes aside on the phone until that account comes back.
 
 Where the phone keeps things, in case you ever need them by hand:
 
-- `opengym-state.json` in the app's private data directory — the durable copy of everything
+- `pocketgym-state.json` in the app's private data directory — the durable copy of everything
   on the phone, written after every change (not reachable without a rooted phone or `adb`
-  on a debug build). `opengym-state-owner.json` beside it says which account that copy
+  on a debug build). `pocketgym-state-owner.json` beside it says which account that copy
   belongs to: a paired phone only ever takes the file back for that account.
-- `opengym-stash.json`, same directory — changes kept by "Disconnect anyway" or by another
+- `pocketgym-stash.json`, same directory — changes kept by "Disconnect anyway" or by another
   account pairing, waiting for their server and account.
-- `Documents/openGym/opengym-backup-YYYY-MM-DD.json` — only with Settings → Data & backup → **Auto-backup on
+- `Documents/PocketGym/pocketgym-backup-YYYY-MM-DD.json` — only with Settings → Data & backup → **Auto-backup on
   changes** switched on: a dated copy after every finished workout or edited routine, in a
   folder of its own under the phone's Documents folder, where a file manager or a sync app
   (Syncthing, a cloud folder) can reach it without taking the rest of Documents along. One
@@ -141,7 +141,7 @@ Where the phone keeps things, in case you ever need them by hand:
   system folder picker — a sync app's folder, an SD card — and the copies go there instead,
   pruned to the same 14. The choice belongs to this phone and does not sync. If the folder
   stops accepting copies (the permission revoked, the folder deleted), they go to
-  `Documents/openGym` again and Settings says so until you choose the folder again or tap
+  `Documents/PocketGym` again and Settings says so until you choose the folder again or tap
   **Use default folder**.
 
 ### Photos and videos of your own exercises
@@ -153,7 +153,7 @@ survive), a GIF loses its comment and metadata blocks, and an MP4/MOV keeps its 
 sound while its metadata and any GPS or sensor track are zeroed. The original file name is
 never stored.
 
-- **Where it lives:** `Library/opengym-media/` in the app's own storage (iOS's Library folder,
+- **Where it lives:** `Library/pocketgym-media/` in the app's own storage (iOS's Library folder,
   Android's files directory), one file per photo or video named by its SHA-256, plus a small
   `index.json`. The state keeps only a reference of a few hundred bytes. A MOV is stored with
   an `.mp4` name so the WebView plays it.
@@ -164,7 +164,7 @@ never stored.
   with the phone's token into the same folder, so they show offline too. A file that has not
   reached the server yet is owed like an unsynced change: **Disconnect** says so and keeps it.
   Big files wait for Wi-Fi unless you tap Settings → Data & backup → **Photos & videos**.
-- **Backups:** Android's cloud backup leaves `opengym-media/` out
+- **Backups:** Android's cloud backup leaves `pocketgym-media/` out
   (`res/xml/backup_rules.xml`, `res/xml/data_extraction_rules.xml`) — Auto Backup drops an
   app's whole backup past 25 MB, and a few videos would take the state file down with them. A
   device-to-device transfer keeps it. iOS includes Library in iCloud and computer backups.
@@ -192,18 +192,18 @@ that.
   out rather than given made-up times. `src/lib/health-connect.js` works this out; its tests
   pin it.
 - **Write-only.** The manifest declares `WRITE_EXERCISE` and `WRITE_WEIGHT` and nothing else, and
-  openGym reads nothing back.
-- **No duplicates.** Every record carries openGym's own id as its `clientRecordId`
-  (`opengym-w-<workout id>`, `opengym-bw-<day>`), so writing it again replaces it. An edited workout
+  Pocket Gym reads nothing back.
+- **No duplicates.** Every record carries Pocket Gym's own id as its `clientRecordId`
+  (`pocketgym-w-<workout id>`, `pocketgym-bw-<day>`), so writing it again replaces it. An edited workout
   or weigh-in is written again; a deleted one is removed from Health Connect.
 - **This phone only.** Whether it is on, and a fingerprint of each record already written, live in
-  `opengym-health.json` in the app's data directory, never in the synced state: it does not travel
+  `pocketgym-health.json` in the app's data directory, never in the synced state: it does not travel
   to a server, into a backup export, or to a second phone. It works the same in local mode and
   paired with a server, because the writing happens on the phone.
 - **When it writes:** after each save (finishing a workout, a weigh-in, an edit), when the app comes
   back to the foreground, and once at launch. While it is off, a save costs nothing: the file is
   read once at launch and kept in memory.
-- **Turning it off** asks whether to keep what openGym wrote in Health Connect, as the user's own
+- **Turning it off** asks whether to keep what Pocket Gym wrote in Health Connect, as the user's own
   data, or to remove exactly those records.
 - **Where it shows:** Android 14 and later have Health Connect built in. On Android 9–13 it is an
   app of its own, and the card offers its store page until it is installed. Below Android 9 (the
@@ -216,7 +216,7 @@ that.
 
 Worth checking on a real device after changes here: turning it on shows Health Connect's own
 permission screen; a finished workout appears in Health Connect within a few seconds; deleting it
-in openGym removes it there; turning it off with "remove" leaves no openGym record behind.
+in Pocket Gym removes it there; turning it off with "remove" leaves no Pocket Gym record behind.
 
 ## Prerequisites
 
@@ -224,7 +224,7 @@ in openGym removes it there; turning it off with "remove" leaves no openGym reco
 - **Android:** Android Studio (bundles the SDK). Java 21 for Gradle.
 - **iOS:** a Mac with Xcode 15+ and CocoaPods (`brew install cocoapods`). A free Apple ID
   is enough to run the app on your own iPhone (see below); paid membership is only needed
-  for App Store distribution, which openGym doesn't do.
+  for App Store distribution, which Pocket Gym doesn't do.
 
 ## Build & run
 
@@ -258,7 +258,7 @@ npx @capacitor/assets generate --iconBackgroundColor '#0c0e12' --splashBackgroun
 
 ## Distribution — deliberately no app stores
 
-openGym's mobile app is not on the Play Store or App Store, and that's a choice: no store
+Pocket Gym's mobile app is not on the Play Store or App Store, and that's a choice: no store
 accounts, no store rules, no yearly fees between you and an open-source app.
 
 ### Android — sideload the APK
@@ -267,9 +267,9 @@ The official signed APK is in four places, all the same file:
 
 - **[opengym.ch](https://opengym.ch)** — the download page.
 - **[GitLab's package registry](https://gitlab.com/DuarteSantos8/opengym/-/packages)** — every
-  build under `opengym-android/<version>/`, with a `.sha256` beside it. Direct link, no login:
-  `https://gitlab.com/api/v4/projects/85678327/packages/generic/opengym-android/<version>/openGym-<version>.apk`
-- **[The GitHub release](https://github.com/DuarteSantos8/openGym/releases)** for that version,
+  build under `pocketgym-android/<version>/`, with a `.sha256` beside it. Direct link, no login:
+  `https://gitlab.com/api/v4/projects/85678327/packages/generic/opengym-android/<version>/PocketGym-<version>.apk`
+- **[The GitHub release](https://github.com/santhosh201289-ai/pocketgym/releases)** for that version,
   with the APK and its `.sha256` attached as release assets.
 - **[The GitLab release](https://gitlab.com/DuarteSantos8/opengym/-/releases)** on the mirror,
   where the file is built; it links to the package registry above.
@@ -301,11 +301,11 @@ cd android && ./gradlew assembleRelease            # → app/build/outputs/apk/r
 
 # one-time: create a keystore. KEEP IT — updates must be signed with the same key,
 # or Android refuses to install the new version over the old one.
-keytool -genkeypair -keystore my.keystore -alias opengym -keyalg RSA -validity 10950
+keytool -genkeypair -keystore my.keystore -alias pocketgym -keyalg RSA -validity 10950
 
 # align + sign (zipalign/apksigner ship with the Android SDK build-tools)
 zipalign -f -p 4 app-release-unsigned.apk aligned.apk
-apksigner sign --ks my.keystore --ks-key-alias opengym --out openGym.apk aligned.apk
+apksigner sign --ks my.keystore --ks-key-alias pocketgym --out PocketGym.apk aligned.apk
 ```
 
 ### iPhone — what's actually possible
@@ -321,7 +321,7 @@ that would simply install. Your free options:
 
 There is a `build:ios` job in [`.gitlab-ci.yml`](../.gitlab-ci.yml) for exactly that path: the
 same mobile bundle, `xcodebuild archive` without a signing identity, and an *unsigned* `.ipa`
-(plus `.sha256`) as job artifact — on a tag also under `opengym-ios/<version>/` in the package
+(plus `.sha256`) as job artifact — on a tag also under `pocketgym-ios/<version>/` in the package
 registry — for AltStore/Sideloadly users to sign with their own Apple ID. It needs a Mac: Xcode
 does not run on the Linux project runner, and gitlab.com's hosted macOS runners are not on the
 free tier. To switch it on, register a Mac as a project runner (shell executor; Xcode, CocoaPods
@@ -340,7 +340,7 @@ membership, the distribution certificate and profile as protected file variables
   reads `version` out of it), so the two drifting apart shows up as a misnamed file.
 - Tagging `vX.Y.Z` is what ships everything: images, APK, release notes. Don't push a version
   tag you don't mean to release — `v*` tags are protected for that reason.
-- **License:** openGym is AGPL-3.0, which by itself sits badly with app-store terms of
+- **License:** Pocket Gym is AGPL-3.0, which by itself sits badly with app-store terms of
   service. `NOTICE.md` carries an app-store exception (an additional permission under
   AGPL §7) granted by the copyright holder — relevant only if store distribution ever happens.
 - The app requests notification permission when the workout-day reminder is switched on,

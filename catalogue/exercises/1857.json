@@ -17,5 +17,5 @@
     "Pause at the bottom.",
     "Return slowly to the start without letting the weight drop."
   ],
-  "textSource": "opengym"
+  "textSource": "pocketgym"
 }

@@ -1,23 +1,23 @@
-# Integration test: boots a NixOS VM with the openGym module (full stack: API + optional
+# Integration test: boots a NixOS VM with the Pocket Gym module (full stack: API + optional
 # module-managed nginx vhost + the exercise media shipped in the frontend package) and
 # exercises the HTTP contract end to end.
 #
-# Used through the flake's `checks.opengym-nixos-test` (runs on `nix flake check`) and the
-# conventional `nixosTests.opengym` output.
+# Used through the flake's `checks.pocketgym-nixos-test` (runs on `nix flake check`) and the
+# conventional `nixosTests.pocketgym` output.
 {
   pkgs,
   modules,
 }:
 
 pkgs.testers.runNixOSTest {
-  name = "opengym";
+  name = "pocketgym";
 
   nodes.machine =
     { pkgs, ... }:
     {
       imports = modules;
 
-      services.opengym = {
+      services.pocketgym = {
         enable = true;
         rpId = "localhost";
         origin = "http://localhost:8080";
@@ -31,7 +31,7 @@ pkgs.testers.runNixOSTest {
   testScript = ''
     start_all()
 
-    machine.wait_for_unit("opengym-api.service")
+    machine.wait_for_unit("pocketgym-api.service")
     machine.wait_for_open_port(3000)
 
     direct = machine.succeed("curl -fsS http://127.0.0.1:3000/api/health")

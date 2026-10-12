@@ -27,7 +27,7 @@ export function makeLinkCode() {
 }
 // Dashes, spaces and case are how a person types it, not part of it.
 const clean = code => (typeof code === 'string' ? code : '').toUpperCase().replace(/[^A-Z0-9]/g, '');
-export const hashLinkCode = code => crypto.createHash('sha256').update('opengym-link:' + clean(code)).digest('hex');
+export const hashLinkCode = code => crypto.createHash('sha256').update('pocketgym-link:' + clean(code)).digest('hex');
 
 function prune(db, now) {
   db.deviceLinks = (db.deviceLinks || []).filter(l => l && typeof l.h === 'string' && l.exp > now);

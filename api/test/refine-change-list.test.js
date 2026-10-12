@@ -40,7 +40,7 @@ const S = equipment => ({
 });
 // … and the proposal they are questioning, which still has the lever dip in it.
 const previous = {
-  opengym_plan: 1, name: 'Upper / lower', summary: 'Two days.', basedOn: 'your last 12 weeks',
+  pocketgym_plan: 1, name: 'Upper / lower', summary: 'Two days.', basedOn: 'your last 12 weeks',
   week: { 1: 'r1', 4: 'r2' },
   routines: [
     { id: 'r1', name: 'Upper', emoji: 'arm', ex: [{ id: '0025', sets: 4, mode: 'reps', reps: 6 }, { id: '0591', sets: 3, mode: 'reps', reps: 12, why: 'triceps' }] },
@@ -115,7 +115,7 @@ test('#471: only exercise-level changes are placed; anything wider is left to th
 test('#471: the refine rules carry the plan format and say a change list is not an answer', () => {
   const { system, task } = buildPromptParts('create', payloadFor([]));
   assert.equal(task, 'refine');
-  assert.match(system, /"opengym_plan": 1/);
+  assert.match(system, /"pocketgym_plan": 1/);
   assert.match(system, /Never answer with a list of `changes`/);
   assert.match(system, /`plan` is what they train today/);
 });

@@ -162,7 +162,7 @@ describe('coach-demo — the starter plan', () => {
   it('produces a bundle the app’s own validator accepts', () => {
     const p = think(() => demoPlan(state(), null))
     expect(validateProposal(p)).toBe(true)
-    expect(p.bundle.opengym_plan).toBe(1)
+    expect(p.bundle.pocketgym_plan).toBe(1)
     expect(Object.values(p.bundle.week).every(id => p.bundle.routines.some(r => r.id === id))).toBe(true)
   })
 })

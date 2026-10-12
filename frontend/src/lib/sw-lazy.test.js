@@ -78,7 +78,7 @@ describe('the worker keeps the on-demand code too', () => {
     expect(vite).toMatch(/generateBundle\(_, bundle\) \{ lazy = lazyAssets\(bundle\) \}/)
     expect(vite).toMatch(/stampSw\(readFileSync\(sw, 'utf8'\), \{ stamp, lazy \}\)/)
     const sw = stampSw(source, { stamp: 'abc', lazy: ["./assets/it's.js"] })
-    expect(sw).toContain("const CACHE = 'opengym-rt-abc'")
+    expect(sw).toContain("const CACHE = 'pocketgym-rt-abc'")
     expect(sw).not.toContain('__LAZY__')
   })
 })

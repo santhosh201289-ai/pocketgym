@@ -10,7 +10,7 @@ Not in this folder (added at deploy time):
   `banner.png`, and `social.jpg` (1200×630, the og:image on every page)
 - `icon-180.png` / `icon-512.png` — copied from `../frontend/public/` (the same
   icons the PWA uses, so the browser tab, home screen and app all match)
-- `openGym.apk` — the signed release build (see `../docs/MOBILE.md`)
+- `PocketGym.apk` — the signed release build (see `../docs/MOBILE.md`)
 - `demo/` — the browser-only demo build of the app, embedded in the `#demo` section and
   reachable on its own at `/demo/`. Built from `../frontend` with `VITE_DEMO=1`, with the
   180 px exercise media from `../catalogue/media` staged into `demo/exercise-media/` by

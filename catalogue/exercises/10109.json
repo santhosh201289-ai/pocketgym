@@ -20,5 +20,5 @@
     "Retrieve the ball and reset.",
     "Keep your arms long and make sure the space behind you is clear."
   ],
-  "textSource": "opengym"
+  "textSource": "pocketgym"
 }

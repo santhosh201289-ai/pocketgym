@@ -1,5 +1,5 @@
 {
-  description = "openGym — self-hosted gym & body-weight tracker";
+  description = "Pocket Gym — self-hosted gym & body-weight tracker";
 
   inputs = {
     # A release branch, not nixos-unstable: this flake is contributed packaging that has to
@@ -21,16 +21,16 @@
       let
         pkgs = nixpkgs.legacyPackages.${system};
 
-        opengymPackages = import ./default.nix { inherit pkgs; };
+        pocketgymPackages = import ./default.nix { inherit pkgs; };
 
-        opengymNixOSModule = self.nixosModules.opengym;
+        pocketgymNixOSModule = self.nixosModules.pocketgym;
 
         testConfig = nixpkgs.lib.nixosSystem {
           inherit system;
           modules = [
-            opengymNixOSModule
+            pocketgymNixOSModule
             {
-              services.opengym = {
+              services.pocketgym = {
                 enable = true;
                 rpId = "localhost";
                 origin = "http://localhost:8080";
@@ -44,7 +44,7 @@
           ];
         };
 
-        cfg = testConfig.config.services.opengym;
+        cfg = testConfig.config.services.pocketgym;
 
         nginxEnabled = testConfig.config.services.nginx.enable;
 
@@ -52,9 +52,9 @@
         nginxTestConfig = nixpkgs.lib.nixosSystem {
           inherit system;
           modules = [
-            opengymNixOSModule
+            pocketgymNixOSModule
             {
-              services.opengym = {
+              services.pocketgym = {
                 enable = true;
                 nginx.enable = true;
               };
@@ -63,23 +63,23 @@
           ];
         };
 
-        check = pkgs.runCommand "opengym-module-check" { } ''
+        check = pkgs.runCommand "pocketgym-module-check" { } ''
           set -euo pipefail
           # Verify the module evaluated correctly
-          echo "services.opengym.enable = ${if cfg.enable then "true" else "false"}"
-          echo "services.opengym.apiPort = ${toString cfg.apiPort}"
-          echo "services.opengym.rpId = ${cfg.rpId}"
-          echo "services.opengym.origin = ${cfg.origin}"
+          echo "services.pocketgym.enable = ${if cfg.enable then "true" else "false"}"
+          echo "services.pocketgym.apiPort = ${toString cfg.apiPort}"
+          echo "services.pocketgym.rpId = ${cfg.rpId}"
+          echo "services.pocketgym.origin = ${cfg.origin}"
 
           # Verify systemd service exists
-          echo "systemd.services.opengym-api exists = ${
-            if testConfig.config.systemd.services ? opengym-api then "true" else "false"
+          echo "systemd.services.pocketgym-api exists = ${
+            if testConfig.config.systemd.services ? pocketgym-api then "true" else "false"
           }"
 
           # Verify extra environment is applied to the API unit
-          echo "opengym-api env MY_FLAG = ${
-            if testConfig.config.systemd.services.opengym-api.environment ? MY_FLAG then
-              testConfig.config.systemd.services.opengym-api.environment.MY_FLAG
+          echo "pocketgym-api env MY_FLAG = ${
+            if testConfig.config.systemd.services.pocketgym-api.environment ? MY_FLAG then
+              testConfig.config.systemd.services.pocketgym-api.environment.MY_FLAG
             else
               "missing"
           }"
@@ -106,12 +106,12 @@
           }"
 
           # Verify frontend/media store paths are exposed for a web server
-          echo "services.opengym.web.root = ${cfg.web.root}"
-          echo "services.opengym.media.root = ${cfg.media.root}"
+          echo "services.pocketgym.web.root = ${cfg.web.root}"
+          echo "services.pocketgym.media.root = ${cfg.media.root}"
 
           # Verify user exists
-          echo "users.users.opengym exists = ${
-            if testConfig.config.users.users ? opengym then "true" else "false"
+          echo "users.users.pocketgym exists = ${
+            if testConfig.config.users.users ? pocketgym then "true" else "false"
           }"
 
           # All checks passed
@@ -119,29 +119,29 @@
         '';
       in
       {
-        packages = opengymPackages // {
-          default = opengymPackages.opengym-frontend;
+        packages = pocketgymPackages // {
+          default = pocketgymPackages.pocketgym-frontend;
         };
 
-        apps.opengym = {
+        apps.pocketgym = {
           type = "app";
           # Runs the full local stack: API + frontend (exercise media included) behind a throwaway
           # Caddy. Defaults to http://localhost:8080; env vars override ports/data/rp.
-          program = "${pkgs.writeShellScript "opengym" ''
+          program = "${pkgs.writeShellScript "pocketgym" ''
             set -euo pipefail
 
-            DATA_DIR=''${OPENGYM_DATA_DIR:-/tmp/opengym-data}
-            API_PORT=''${OPENGYM_API_PORT:-3000}
-            WEB_PORT=''${OPENGYM_WEB_PORT:-8080}
+            DATA_DIR=''${POCKETGYM_DATA_DIR:-/tmp/pocketgym-data}
+            API_PORT=''${POCKETGYM_API_PORT:-3000}
+            WEB_PORT=''${POCKETGYM_WEB_PORT:-8080}
             mkdir -p "$DATA_DIR"
 
             export PORT="$API_PORT"
             export DATA_DIR
-            export RP_ID=''${OPENGYM_RP_ID:-localhost}
-            export ORIGIN=''${OPENGYM_ORIGIN:-http://localhost:$WEB_PORT}
+            export RP_ID=''${POCKETGYM_RP_ID:-localhost}
+            export ORIGIN=''${POCKETGYM_ORIGIN:-http://localhost:$WEB_PORT}
             export ALLOW_GUEST=''${ALLOW_GUEST:-1}
 
-            ${opengymPackages.opengym-api}/bin/opengym-api &
+            ${pocketgymPackages.pocketgym-api}/bin/pocketgym-api &
             API_PID=$!
 
             CFGDIR=$(mktemp -d)
@@ -164,28 +164,28 @@
                 reverse_proxy 127.0.0.1:$API_PORT
               }
               handle {
-                root * ${opengymPackages.opengym-frontend}/share/opengym
+                root * ${pocketgymPackages.pocketgym-frontend}/share/pocketgym
                 try_files {path} /index.html
                 file_server
               }
             }
             EOF
 
-            echo "openGym running at http://localhost:$WEB_PORT (API on :$API_PORT, data in $DATA_DIR) — Ctrl-C to stop"
+            echo "Pocket Gym running at http://localhost:$WEB_PORT (API on :$API_PORT, data in $DATA_DIR) — Ctrl-C to stop"
             ${pkgs.caddy}/bin/caddy run --config "$CGFILE"
           ''}";
         };
 
-        apps.default = self.apps.${system}.opengym;
+        apps.default = self.apps.${system}.pocketgym;
 
         checks = {
           nixos-module-eval = check;
         }
         // (pkgs.lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {
           # Boots a NixOS VM and exercises the full HTTP contract (API + nginx vhost + SPA).
-          opengym-nixos-test = import ./tests.nix {
+          pocketgym-nixos-test = import ./tests.nix {
             inherit pkgs;
-            modules = [ opengymNixOSModule ];
+            modules = [ pocketgymNixOSModule ];
           };
         });
 
@@ -196,7 +196,7 @@
             git
           ];
           shellHook = ''
-            echo "openGym dev shell (Node.js $(node --version))"
+            echo "Pocket Gym dev shell (Node.js $(node --version))"
             echo "  cd frontend && npm install && npm run dev"
             echo "  cd api && npm install && node server.js"
           '';
@@ -204,21 +204,21 @@
       }
     )
     // {
-      # Wraps the module so NixOS configurations using it get openGym packages built from this
-      # flake's LOCKED nixpkgs input. Importing contrib/nix/opengym.nix directly falls back to
+      # Wraps the module so NixOS configurations using it get Pocket Gym packages built from this
+      # flake's LOCKED nixpkgs input. Importing contrib/nix/pocketgym.nix directly falls back to
       # the importing system's nixpkgs.
-      nixosModules.opengym =
+      nixosModules.pocketgym =
         { pkgs, ... }:
         {
-          imports = [ ./opengym.nix ];
-          _module.args.opengymPkgs = self.packages.${pkgs.stdenv.hostPlatform.system} or null;
+          imports = [ ./pocketgym.nix ];
+          _module.args.pocketgymPkgs = self.packages.${pkgs.stdenv.hostPlatform.system} or null;
         };
-      nixosModules.default = self.nixosModules.opengym;
+      nixosModules.default = self.nixosModules.pocketgym;
 
       # Conventional NixOS test output (boots a VM; also wired into checks on Linux).
-      nixosTests.opengym = import ./tests.nix {
+      nixosTests.pocketgym = import ./tests.nix {
         pkgs = nixpkgs.legacyPackages.x86_64-linux;
-        modules = [ self.nixosModules.opengym ];
+        modules = [ self.nixosModules.pocketgym ];
       };
     };
 }

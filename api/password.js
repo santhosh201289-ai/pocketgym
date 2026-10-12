@@ -156,7 +156,7 @@ const COMMON = new Set([
   'password1234', 'password12345', 'passw0rd123', 'iloveyou123', 'abcdefghij', 'abcd123456',
   'abc1234567', 'a1b2c3d4e5', 'aaaaaaaaaa', 'princess123', 'football123', 'baseball123',
   'sunshine123', 'superman123', 'welcome123', 'welcome1234', 'letmein123', 'trustno1234',
-  'changeme123', 'administrator', 'opengym123', 'opengym1234', 'qwerty1234567', '123qweasdzxc',
+  'changeme123', 'administrator', 'pocketgym123', 'pocketgym1234', 'qwerty1234567', '123qweasdzxc',
   'zaq12wsxcde3', '1q2w3e4r5t6y7u', 'q1w2e3r4t5y6', '123123123123', '1234512345',
   '123456123456', 'monkey12345', 'dragon12345', 'master12345', 'shadow12345', 'michael123',
   'jennifer123', 'computer123', 'starwars123', 'whatever123', 'freedom1234', 'pokemon1234',
@@ -167,7 +167,7 @@ const COMMON = new Set([
 const STEMS = new Set([
   'password', 'passwort', 'passw0rd', 'motdepasse', 'contrasena', 'contraseña', 'senha', 'parola',
   'haslo', 'wachtwoord', 'salasana', 'qwerty', 'qwertz', 'azerty', 'qwertyuiop', 'asdfgh',
-  'letmein', 'welcome', 'iloveyou', 'admin', 'administrator', 'changeme', 'opengym', 'gym',
+  'letmein', 'welcome', 'iloveyou', 'admin', 'administrator', 'changeme', 'pocketgym', 'gym',
   'workout', 'fitness', 'dragon', 'monkey', 'football', 'baseball', 'sunshine', 'princess',
   'superman', 'batman', 'master', 'shadow', 'trustno', 'abc', 'abcdef', 'secret', 'login'
 ]);
@@ -206,7 +206,7 @@ export function makeResetCode() {
   return raw.slice(0, 4) + '-' + raw.slice(4, 8) + '-' + raw.slice(8);
 }
 const cleanCode = code => String(code || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
-export const hashResetCode = code => crypto.createHash('sha256').update('opengym-reset:' + cleanCode(code)).digest('hex');
+export const hashResetCode = code => crypto.createHash('sha256').update('pocketgym-reset:' + cleanCode(code)).digest('hex');
 export function resetCodeMatches(code, stored) {
   if (!stored || typeof stored.h !== 'string' || !(stored.exp > Date.now())) return false;
   const a = Buffer.from(hashResetCode(code), 'hex');

@@ -11,8 +11,8 @@ import { fileURLToPath } from 'node:url'
 import { MEDIA_CACHE } from './media-prefetch.js'
 
 const SW = readFileSync(fileURLToPath(new URL('../../public/sw.js', import.meta.url)), 'utf8')
-const BUILD = 'opengym-rt-__BUILD__'
-const MEDIA = 'opengym-media-v1'
+const BUILD = 'pocketgym-rt-__BUILD__'
+const MEDIA = 'pocketgym-media-v1'
 const ORIGIN = 'https://gym.test'
 const keyOf = r => (typeof r === 'string' ? new URL(r, ORIGIN + '/').href : r.url)
 
@@ -81,7 +81,7 @@ describe('sw.js exercise media', () => {
   it('survives an update: activate sweeps old builds, never the media, and adopts what an old build had cached', async () => {
     const w = worker()
     await w.get('/img/0002.jpg')
-    const old = await w.caches.open('opengym-rt-oldbuild')
+    const old = await w.caches.open('pocketgym-rt-oldbuild')
     await old.put(ORIGIN + '/gif/0003.gif', new Response('old gif', { headers: { 'content-type': 'image/gif' } }))
     await old.put(ORIGIN + '/assets/index-old.js', new Response('old code'))
     const shell = await w.caches.open(BUILD)
@@ -89,7 +89,7 @@ describe('sw.js exercise media', () => {
 
     await w.activate()
     expect(await w.caches.keys()).toEqual(expect.arrayContaining([BUILD, MEDIA]))
-    expect(await w.caches.keys()).not.toContain('opengym-rt-oldbuild')
+    expect(await w.caches.keys()).not.toContain('pocketgym-rt-oldbuild')
     expect(w.media().urls()).toEqual([ORIGIN + '/img/0002.jpg', ORIGIN + '/gif/0003.gif'])
 
     w.net.up = false
@@ -98,7 +98,7 @@ describe('sw.js exercise media', () => {
 
   it('does not adopt a login page an older build had cached under an image\'s URL', async () => {
     const w = worker()
-    const old = await w.caches.open('opengym-rt-oldbuild')
+    const old = await w.caches.open('pocketgym-rt-oldbuild')
     // v1.3.8 kept any ok answer, so a proxy's sign-in page could sit under a gif's URL. This
     // small cache's clone() drops a `redirected` flag, so the page's own type is what is
     // checked here.

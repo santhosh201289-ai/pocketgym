@@ -18,5 +18,5 @@
     "Return the hand and tap with the other side.",
     "Move slowly without rocking."
   ],
-  "textSource": "opengym"
+  "textSource": "pocketgym"
 }

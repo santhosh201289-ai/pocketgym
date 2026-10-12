@@ -1,15 +1,15 @@
-# openGym HTTP API: hand-written OpenAPI 3.1 spec.
+# Pocket Gym HTTP API: hand-written OpenAPI 3.1 spec.
 # Source of truth: api/server.js (a single framework-free Node file). Every route the
 # server registers is documented here; if you add a route there, add it here too.
 # Browsable version: https://opengym.ch/api.html
 openapi: 3.1.0
 
 info:
-  title: openGym API
+  title: Pocket Gym API
   version: 1.4.0
-  summary: Passkey (WebAuthn) auth + per-user state storage for openGym
+  summary: Passkey (WebAuthn) auth + per-user state storage for Pocket Gym
   description: |
-    The backend of [openGym](https://opengym.ch), a free, open-source
+    The backend of [Pocket Gym](https://opengym.ch), a free, open-source
     gym & body-weight tracker. A plain Node server, no framework, JSON-file storage,
     HMAC-signed session cookies.
 
@@ -115,13 +115,13 @@ info:
     name: AGPL-3.0-or-later
     identifier: AGPL-3.0-or-later
   contact:
-    name: openGym
+    name: Pocket Gym
     url: https://gitlab.com/DuarteSantos8/opengym
 
 servers:
   - url: /
-    description: Same origin as the openGym web app (the normal deployment)
-  - url: https://opengym.example.com
+    description: Same origin as the Pocket Gym web app (the normal deployment)
+  - url: https://pocketgym.example.com
     description: Your self-hosted instance
 
 tags:
@@ -3760,7 +3760,7 @@ components:
           type: object
           description: A whole plan, from a `create` job (routines, week and any custom exercises).
           properties:
-            opengym_plan: { type: integer, const: 1 }
+            pocketgym_plan: { type: integer, const: 1 }
             name: { type: string, maxLength: 40 }
             summary: { type: string }
             basedOn: { type: string }

@@ -20,5 +20,5 @@
     "Walk the set distance, then lower the weights carefully.",
     "Swap positions and repeat."
   ],
-  "textSource": "opengym"
+  "textSource": "pocketgym"
 }

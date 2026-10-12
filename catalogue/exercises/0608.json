@@ -18,5 +18,5 @@
     "Return to the centre and rotate to the other side.",
     "Move slowly and avoid using momentum."
   ],
-  "textSource": "opengym"
+  "textSource": "pocketgym"
 }

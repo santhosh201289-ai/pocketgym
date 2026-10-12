@@ -18,5 +18,5 @@
     "Walk several steps one way, then return the other way."
   ],
   "femaleVariant": "2460",
-  "textSource": "opengym"
+  "textSource": "pocketgym"
 }

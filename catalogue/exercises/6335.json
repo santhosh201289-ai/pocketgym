@@ -18,5 +18,5 @@
     "Return the leg to the start with control.",
     "Repeat, then switch sides."
   ],
-  "textSource": "opengym"
+  "textSource": "pocketgym"
 }

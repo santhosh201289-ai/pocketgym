@@ -1,6 +1,6 @@
 # Keeps the GitLab copy identical to this repository, so nobody has to push twice.
 #
-# GitHub is the home of openGym; gitlab.com/DuarteSantos8/opengym is a mirror that stays
+# GitHub is the home of Pocket Gym; gitlab.com/DuarteSantos8/opengym is a mirror that stays
 # because its CI builds the release artefacts (signed APK, multi-arch images, SBOMs) and
 # nothing there is merged by hand. Every push to main and every v* tag is forwarded here.
 # Pull mirroring on gitlab.com is a paid feature, so the push runs from this side.

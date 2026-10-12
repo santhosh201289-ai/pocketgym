@@ -1,6 +1,6 @@
 {
-  "name": "openGym",
-  "short_name": "openGym",
+  "name": "Pocket Gym",
+  "short_name": "Pocket Gym",
   "description": "Personal gym & body weight tracker",
   "start_url": "./",
   "scope": "./",

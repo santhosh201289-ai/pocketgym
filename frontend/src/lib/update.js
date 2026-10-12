@@ -7,7 +7,7 @@
 
 import { MOBILE } from './mobile.js'
 
-const GITLAB_PROJECT_ID = 'DuarteSantos8%2Fopengym'
+const GITLAB_PROJECT_ID = 'DuarteSantos8%2Fpocketgym'
 const RELEASES_URL = `https://gitlab.com/api/v4/projects/${GITLAB_PROJECT_ID}/releases`
 
 /**
@@ -141,7 +141,7 @@ export async function downloadAndInstall(url, expectedHash = null, onProgress = 
     reader.readAsDataURL(blob)
   })
 
-  const fileName = 'opengym-update.apk'
+  const fileName = 'pocketgym-update.apk'
   await Filesystem.writeFile({
     path: fileName,
     directory: Directory.Cache,

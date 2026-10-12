@@ -17,5 +17,5 @@
     "Return to the middle and rotate to the other side.",
     "Keep the movement small and controlled."
   ],
-  "textSource": "opengym"
+  "textSource": "pocketgym"
 }

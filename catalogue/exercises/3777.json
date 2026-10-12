@@ -19,5 +19,5 @@
     "Return the arm slowly to the start.",
     "Alternate arms and keep your body in one straight line."
   ],
-  "textSource": "opengym"
+  "textSource": "pocketgym"
 }

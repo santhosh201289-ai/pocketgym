@@ -90,13 +90,13 @@ describe('checkForUpdate', () => {
       tag_name: 'v99.0.0',
       assets: {
         links: [{
-          url: 'https://redirect.example/opengym.apk',
-          direct_asset_url: 'https://direct.example/opengym.apk'
+          url: 'https://redirect.example/pocketgym.apk',
+          direct_asset_url: 'https://direct.example/pocketgym.apk'
         }]
       }
     }])
     const result = await checkForUpdate()
-    expect(result.apkUrl).toBe('https://direct.example/opengym.apk')
+    expect(result.apkUrl).toBe('https://direct.example/pocketgym.apk')
   })
 
   it('returns null apkUrl when no .apk link exists', async () => {
@@ -115,7 +115,7 @@ describe('checkForUpdate', () => {
       tag_name: 'v99.0.0',
       assets: {
         links: [
-          { url: 'https://example.com/opengym.apk', direct_asset_url: 'https://example.com/opengym.apk' },
+          { url: 'https://example.com/pocketgym.apk', direct_asset_url: 'https://example.com/pocketgym.apk' },
           { url: hashUrl, direct_asset_url: hashUrl },
         ]
       }
@@ -129,7 +129,7 @@ describe('checkForUpdate', () => {
       tag_name: 'v99.0.0',
       assets: {
         links: [
-          { name: 'APK', url: 'https://example.com/opengym.apk', direct_asset_url: 'https://example.com/opengym.apk' },
+          { name: 'APK', url: 'https://example.com/pocketgym.apk', direct_asset_url: 'https://example.com/pocketgym.apk' },
           { name: 'SHA256 checksum', url: 'https://example.com/checksum.txt', direct_asset_url: 'https://example.com/checksum.txt' },
         ]
       }
@@ -145,7 +145,7 @@ describe('checkForUpdate', () => {
   const REAL_RELEASE = [
     {
       "tag_name": "v1.3.1",
-      "name": "openGym v1.3.1",
+      "name": "Pocket Gym v1.3.1",
       "assets": {
         "count": 7,
         "sources": [
@@ -176,14 +176,14 @@ describe('checkForUpdate', () => {
           },
           {
             "id": 12790839,
-            "name": "openGym-1.3.1.apk.sha256 (checksum)",
+            "name": "PocketGym-1.3.1.apk.sha256 (checksum)",
             "url": "https://gitlab.com/api/v4/projects/85678327/packages/generic/opengym-android/1.3.1/openGym-1.3.1.apk.sha256",
             "direct_asset_url": "https://gitlab.com/api/v4/projects/85678327/packages/generic/opengym-android/1.3.1/openGym-1.3.1.apk.sha256",
             "link_type": "other"
           },
           {
             "id": 12790838,
-            "name": "openGym-1.3.1.apk (Android, sideload)",
+            "name": "PocketGym-1.3.1.apk (Android, sideload)",
             "url": "https://gitlab.com/api/v4/projects/85678327/packages/generic/opengym-android/1.3.1/openGym-1.3.1.apk",
             "direct_asset_url": "https://gitlab.com/api/v4/projects/85678327/packages/generic/opengym-android/1.3.1/openGym-1.3.1.apk",
             "link_type": "package"
@@ -204,7 +204,7 @@ describe('checkForUpdate', () => {
   it('returns null hashUrl when no hash link exists', async () => {
     mockFetch([{
       tag_name: 'v99.0.0',
-      assets: { links: [{ url: 'https://example.com/opengym.apk', direct_asset_url: 'https://example.com/opengym.apk' }] }
+      assets: { links: [{ url: 'https://example.com/pocketgym.apk', direct_asset_url: 'https://example.com/pocketgym.apk' }] }
     }])
     const result = await checkForUpdate()
     expect(result.hashUrl).toBe(null)

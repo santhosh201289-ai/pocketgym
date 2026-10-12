@@ -1,6 +1,6 @@
 # Roadmap
 
-Where openGym is going, in the order it is likely to land. Each block is a GitHub milestone; the
+Where Pocket Gym is going, in the order it is likely to land. Each block is a GitHub milestone; the
 issues and pull requests attached to it are the plan, this file is the readable summary.
 
 **A release every two weeks, on a Sunday.** Each one is small on purpose: a handful of issues, one
@@ -10,7 +10,7 @@ block, the date does not move. Version numbers follow the release rule, not the 
 the next release is the last published one plus one patch (1.3.7 → 1.3.8), and a minor bump is
 reserved for a step as big as the new exercise database (v1.4.0).
 
-- Milestones: https://github.com/DuarteSantos8/openGym/milestones (every open issue sits in exactly one)
+- Milestones: https://github.com/santhosh201289-ai/pocketgym/milestones (every open issue sits in exactly one)
 - Tracks, in order: the new exercise database with the community round (v1.4.0) → programmes → the
   progression engine → cardio → sharing and gyms → accounts → the iOS app → Android and health →
   looks and social, with database storage after that
@@ -110,7 +110,7 @@ pencilled in for v1.3.11, and a sync rework so no device loses data again. See t
 the full list.
 
 - A rotation beside the fixed week: the next session is the next one you haven't done, whatever
-  the weekday, with an editor in Plan (#158, #69; PR #167 and kurktchiev/openGym#1)
+  the weekday, with an editor in Plan (#158, #69; PR #167 and kurktchiev/PocketGym#1)
 - A calmer app: Settings on one screen with search, Plan as Schedule and Routines, a workout screen
   without the tab bar, a docked rest bar and a rest-time wheel up to 15:00, one icon per idea
 - Swipe actions on sets, routines and the loop, with Undo; a colour of your own as the accent

@@ -19,5 +19,5 @@
     "Continue forward in an arc, then reverse the path with control.",
     "Use light weights and avoid swinging your torso."
   ],
-  "textSource": "opengym"
+  "textSource": "pocketgym"
 }

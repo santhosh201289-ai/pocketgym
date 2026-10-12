@@ -17,5 +17,5 @@
     "Keep the movement smooth and controlled.",
     "Switch to the other direction after 8 to 10 circles."
   ],
-  "textSource": "opengym"
+  "textSource": "pocketgym"
 }

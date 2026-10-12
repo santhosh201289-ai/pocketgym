@@ -22,7 +22,7 @@ class FakeCaches {
   async match(req) { for (const c of this.c.values()) { const hit = await c.match(req); if (hit) return hit } return undefined }
 }
 
-const CACHE = 'opengym-rt-__BUILD__'   // the placeholder the build rewrites (vite.config.js swStamp)
+const CACHE = 'pocketgym-rt-__BUILD__'   // the placeholder the build rewrites (vite.config.js swStamp)
 const handlers = {}
 let skipWaiting = 0
 
@@ -50,7 +50,7 @@ const fire = async (type, ev = {}) => {
   return e
 }
 const previousBuild = async () => {
-  const old = await globalThis.caches.open('opengym-rt-oldbuild')
+  const old = await globalThis.caches.open('pocketgym-rt-oldbuild')
   await old.put('index.html', { ok: true, body: 'the shell already on this device' })
   return old
 }
@@ -68,7 +68,7 @@ describe('sw.js install and activate', () => {
     expect(skipWaiting).toBe(0)
 
     await fire('activate')   // an activate that happens anyway must still leave the old cache alone
-    expect(await globalThis.caches.keys()).toContain('opengym-rt-oldbuild')
+    expect(await globalThis.caches.keys()).toContain('pocketgym-rt-oldbuild')
     expect(await old.match('index.html')).toBeTruthy()
   })
 
@@ -80,7 +80,7 @@ describe('sw.js install and activate', () => {
     await expect(fire('install')).rejects.toThrow()
     expect(skipWaiting).toBe(0)
     expect((await globalThis.caches.open(CACHE)).keys()).not.toContain('index.html')
-    expect(await globalThis.caches.keys()).toContain('opengym-rt-oldbuild')
+    expect(await globalThis.caches.keys()).toContain('pocketgym-rt-oldbuild')
   })
 
   it('a server that is restarting fails the install rather than cache its error page', async () => {
@@ -89,7 +89,7 @@ describe('sw.js install and activate', () => {
     globalThis.fetch = async () => ({ ok: false, status: 502, redirected: false, text: async () => 'Bad Gateway' })
 
     await expect(fire('install')).rejects.toThrow()
-    expect(await globalThis.caches.keys()).toContain('opengym-rt-oldbuild')
+    expect(await globalThis.caches.keys()).toContain('pocketgym-rt-oldbuild')
   })
 
   it('a chunk that will not cache fails the install, so the build on the device stays', async () => {
@@ -105,7 +105,7 @@ describe('sw.js install and activate', () => {
     expect((await globalThis.caches.open(CACHE)).keys()).not.toContain('index.html')
 
     await fire('activate')
-    expect(await globalThis.caches.keys()).toContain('opengym-rt-oldbuild')
+    expect(await globalThis.caches.keys()).toContain('pocketgym-rt-oldbuild')
     expect(await old.match('index.html')).toBeTruthy()
   })
 
@@ -123,7 +123,7 @@ describe('sw.js install and activate', () => {
     expect((await globalThis.caches.open(CACHE)).keys()).toEqual([])
 
     await fire('activate')
-    expect(await globalThis.caches.keys()).toContain('opengym-rt-oldbuild')
+    expect(await globalThis.caches.keys()).toContain('pocketgym-rt-oldbuild')
     expect(await old.match('index.html')).toBeTruthy()
   })
 
