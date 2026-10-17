@@ -103,7 +103,7 @@ export default function LineChart({ points, h = 150, unit = '', color = 'var(--a
 
   const poly = pts.map(p => X(p.t).toFixed(1) + ',' + Y(p.y).toFixed(1)).join(' ')
   const last = pts[pts.length - 1]
-  const gid = 'g' + Math.round(t0 % 1e7) + '_' + H
+  const gid = 'g' + Math.round(t0 % 1e7) + '_' + H + '_' + String(color).replace(/[^a-z0-9]/gi, '')
   const hoverSource = single ? [points[0]] : points
   const hoverDates = hoverSource.map(p => p.d || isoOf(new Date(p.t)))
   const showYear = new Set(hoverDates.map(iso => new Date(iso + 'T12:00:00').getFullYear())).size > 1

@@ -43,6 +43,7 @@ import { ServerSyncSection, KeptChangesRows, leaveServer, connectServer, passkey
 import { passwordOn, PasswordRow, openPasswordSignIn, openPasswordRegister } from '../components/PasswordAuth.jsx'
 import { usePasskeys, PasskeysRow, DeviceLinkRow, openDeviceLinkRedeem } from '../components/Passkeys.jsx'
 import { Section, Row, SelectRow, Switch, Segmented, Button, TextField, SearchField } from '../components/ui.jsx'
+import { importActivityFiles } from '../components/Activity.jsx'
 import { PAGES, ROOT_GROUPS, pageVisible, searchSettings, pageTrail } from './settings-pages.js'
 
 /* Settings (v1.3.11). The root is one screen: an account card, eleven rows that each open a page
@@ -99,6 +100,7 @@ export default function Settings({ page = null, find = null, via = null }) {
   const toast = useUI(s => s.toast)
   const fileRef = useRef(null)
   const importRef = useRef(null)
+  const activityRef = useRef(null)
   const body = useRef(null)
   const wakeOK = wakeLockSupported()
 
@@ -766,6 +768,10 @@ export default function Settings({ page = null, find = null, via = null }) {
           subtitle={t('Show the body weight card on Home.')}>
           <Switch checked={S.showWeightCard !== false} onChange={v => update(s => { s.showWeightCard = v })} />
         </Row>
+        <Row icon="figureRun" iconTint="var(--orange)" title={t('Activity')}
+          subtitle={t('Show steps, sleep and your latest run, ride or swim on Home.')}>
+          <Switch checked={S.showActivityCard !== false} onChange={v => update(s => { s.showActivityCard = v })} />
+        </Row>
         {/* The bar at the top that says the app is offline, kept local, or not synced (#369, #330).
             Here and not under Server & sync, which a phone kept local never shows. Switching it on
             also brings back the no-server line its × hid (#454). */}
@@ -798,6 +804,9 @@ export default function Settings({ page = null, find = null, via = null }) {
         <Row icon="key" iconTint="var(--teal)" title={t('Import from Hevy')}
           subtitle={t('Pull your history with a Hevy Pro API key')}
           accessory="chevron" onClick={importFromHevy} />
+        <Row icon="figureRun" iconTint="var(--orange)" title={t('Import activity')}
+          subtitle={t('Steps, sleep, runs and swims: Apple Health export, or FIT, GPX and TCX files from Garmin, Strava and other watches')}
+          accessory="chevron" onClick={() => activityRef.current.click()} />
       </Section>
       {hasMedia && <Section><MediaRow /></Section>}
       <Section>
@@ -807,6 +816,8 @@ export default function Settings({ page = null, find = null, via = null }) {
       {/* Reset after reading so picking the same file twice still fires onChange. */}
       <input ref={importRef} type="file" accept=".csv,.xml,text/csv,text/xml" style={{ display: 'none' }}
         onChange={ev => { const f = ev.target.files[0]; if (f) importFromApp(f); ev.target.value = '' }} />
+      <input ref={activityRef} type="file" multiple accept=".fit,.gpx,.tcx,.xml" style={{ display: 'none' }}
+        onChange={ev => { const fs = [...ev.target.files]; ev.target.value = ''; importActivityFiles(fs) }} />
     </>,
 
     about: () => <>

@@ -10,6 +10,7 @@ Everything here lives in the app under **Settings → Data & backup**, except pl
 | Bring body weight over from an iPhone | **Import from another app** with the Apple Health export |
 | Give someone your routines | **Plan → Share your plan → Export plan file** |
 | Back up or move everything | **Export backup** / **Import backup** |
+| Bring in steps, sleep, heart rate, runs, rides and swims | **Import activity** (Apple Health export, FIT, GPX, TCX) |
 
 ## Workout history from another app
 
@@ -54,6 +55,32 @@ megabytes; Pocket Gym reads only the body-weight records from it, in whatever un
 in, and keeps one weigh-in per day. Days that already have a weigh-in are left alone.
 
 A CSV with a date column and a weight column works the same way.
+
+## Activity: steps, sleep, runs, rides and swims
+
+Pocket Gym keeps daily activity (steps, distance, active calories, resting heart rate, sleep) and
+cardio sessions (runs, walks, rides, swims, hikes) next to your strength training. Sessions are kept
+apart from workouts, so they never change progression, volume or records. They show on Home
+(**Today's activity**, which you can hide under Settings → On Home) and in Stats (**Steps & cardio**).
+
+Pick one or several files under **Settings → Data & backup → Import activity**:
+
+| From | What to export | What comes in |
+|---|---|---|
+| iPhone (Apple Watch, and bands that sync to Apple Health: Noise, Garmin, Mi, Amazfit…) | Health → profile picture → **Export All Health Data**, unzip, pick `export.xml` | Daily steps, walking/running distance, active energy, resting heart rate, sleep, and every workout |
+| Garmin Connect | An activity → ⚙ → **Export Original** (.fit) or Export to GPX/TCX | That session |
+| Strava | An activity → ⋯ → **Export Original** or **Export GPX**; or Settings → My Account → **Download or delete your account** for everything | Those sessions |
+| Coros, Polar, Suunto, Wahoo, Zepp and other watches | Their app's FIT, GPX or TCX export | Those sessions |
+
+What each session keeps: kind, start, duration, distance, calories, average and maximum heart rate,
+and for swims the pool length and laps. GPS tracks are not stored.
+
+Importing is safe to repeat. A session you already have is skipped, also when it comes from a second
+source: the same kind starting within two minutes is treated as the same session (your watch's file
+and Strava's copy, say). For a day's steps, Apple Health lists the iPhone and the watch separately;
+the day takes the source that counted the most, as Health itself does, rather than adding them up.
+
+You can also add a session or a day's steps, sleep and resting heart rate by hand from the Home card.
 
 ## Sharing a plan
 

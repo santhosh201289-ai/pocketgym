@@ -15,6 +15,7 @@ import { Button } from '../components/ui.jsx'
 import { tappable } from '../lib/use-sheet-keyboard.js'
 import { glyphOf } from '../lib/glyphs.js'
 import { dayNoteOf } from '../lib/day-notes.js'
+import { ActivityCard } from '../components/Activity.jsx'
 
 // Home = what to do now + a quick glance. Deep charts & history live in Stats.
 export default function Home() {
@@ -222,6 +223,8 @@ export default function Home() {
         ? t('No weigh-ins yet. Log your weight to start the curve.')
         : t("No weigh-ins yet. Log your weight to start the curve (we also ask before every workout).")}</div>}
     </div>}
+
+    {S.showActivityCard !== false && <ActivityCard />}
 
     <div className="card tappable" style={{ cursor: 'pointer' }} {...tappable(() => calendarSheet())}>
       <div className="row between">
