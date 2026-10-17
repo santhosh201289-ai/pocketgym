@@ -337,8 +337,8 @@ public class HealthConnectPlugin extends Plugin {
             Energy kcal = metrics.contains(ActiveCaloriesBurnedRecord.ACTIVE_CALORIES_TOTAL) ? a.get(ActiveCaloriesBurnedRecord.ACTIVE_CALORIES_TOTAL) : null;
             Long rest = metrics.contains(RestingHeartRateRecord.BPM_AVG) ? a.get(RestingHeartRateRecord.BPM_AVG) : null;
             if (steps != null) d.put("steps", steps);
-            if (dist != null) d.put("distM", dist.getInMeters());
-            if (kcal != null) d.put("activeKcal", kcal.getInKilocalories());
+            if (dist != null) d.put("distM", dist.getMeters());
+            if (kcal != null) d.put("activeKcal", kcal.getKilocalories());
             if (rest != null) d.put("restHr", rest);
             if (d.length() > 1) out.put(d);
         }
@@ -398,8 +398,8 @@ public class HealthConnectPlugin extends Plugin {
                     Energy kcal = metrics.contains(ActiveCaloriesBurnedRecord.ACTIVE_CALORIES_TOTAL) ? a.get(ActiveCaloriesBurnedRecord.ACTIVE_CALORIES_TOTAL) : null;
                     Long avg = metrics.contains(HeartRateRecord.BPM_AVG) ? a.get(HeartRateRecord.BPM_AVG) : null;
                     Long max = metrics.contains(HeartRateRecord.BPM_MAX) ? a.get(HeartRateRecord.BPM_MAX) : null;
-                    if (dist != null) o.put("distM", dist.getInMeters());
-                    if (kcal != null) o.put("kcal", kcal.getInKilocalories());
+                    if (dist != null) o.put("distM", dist.getMeters());
+                    if (kcal != null) o.put("kcal", kcal.getKilocalories());
                     if (avg != null) o.put("avgHr", avg);
                     if (max != null) o.put("maxHr", max);
                 } catch (Exception ignored) {
