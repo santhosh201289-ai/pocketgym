@@ -892,6 +892,8 @@ export default {
   'Music playing on this phone stops during a workout and does not resume by itself.': 'A telefonon szóló zene edzés közben leáll, és nem indul újra magától.',
   'The quieter three-beep sound from before 1.3.9, instead of the louder chime.': 'Az 1.3.9 előtti halkabb, három sípolásból álló hang a hangosabb csengés helyett.',
   'Import from Hevy': 'Importálás a Hevyből',
+  'Import activity': 'Aktivitás importálása',
+  'Import from Health Connect': 'Importálás a Health Connectből',
   'Pull your history with a Hevy Pro API key': 'Előzmények letöltése Hevy Pro API-kulccsal',
   'Pull your history with a Hevy Pro API key. The key is only used for this import and is not saved.': 'Előzmények letöltése Hevy Pro API-kulccsal. A kulcs csak ehhez az importhoz kell, nem mentjük el.',
   'Hevy API key': 'Hevy API-kulcs',

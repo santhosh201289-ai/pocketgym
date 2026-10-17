@@ -652,6 +652,8 @@ export default {
   'Nothing to import from that file': '이 파일에서 가져올 내용이 없습니다',
   // --- import from Hevy API ---
   'Import from Hevy': 'Hevy에서 가져오기',
+  'Import activity': '활동 가져오기',
+  'Import from Health Connect': 'Health Connect에서 가져오기',
   'Pull your history with a Hevy Pro API key': 'Hevy Pro API 키로 기록을 가져옵니다',
   'Pull your history with a Hevy Pro API key. The key is only used for this import and is not saved.': 'Hevy Pro API 키로 기록을 가져옵니다. 키는 이번 가져오기에만 사용되며 저장되지 않습니다.',
   'Hevy API key': 'Hevy API 키',

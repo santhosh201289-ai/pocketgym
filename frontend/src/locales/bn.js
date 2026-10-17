@@ -735,6 +735,8 @@ export default {
   'Nothing to import from that file': 'ওই ফাইল থেকে ইমপোর্ট করার মতো কিছু নেই',
   // --- import from Hevy API ---
   'Import from Hevy': 'Hevy থেকে ইমপোর্ট করুন',
+  'Import activity': 'অ্যাক্টিভিটি ইমপোর্ট করুন',
+  'Import from Health Connect': 'Health Connect থেকে ইমপোর্ট করুন',
   'Pull your history with a Hevy Pro API key': 'Hevy Pro API কী দিয়ে আপনার ইতিহাস আনুন',
   'Pull your history with a Hevy Pro API key. The key is only used for this import and is not saved.': 'Hevy Pro API কী দিয়ে আপনার ইতিহাস আনুন। কী-টি শুধু এই ইমপোর্টের জন্য ব্যবহার হয় এবং সেভ করা হয় না।',
   'Hevy API key': 'Hevy API কী',

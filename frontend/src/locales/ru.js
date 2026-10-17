@@ -642,6 +642,8 @@ export default {
   'Nothing to import from that file': 'В этом файле нечего импортировать',
   // --- import from Hevy API ---
   'Import from Hevy': 'Импорт из Hevy',
+  'Import activity': 'Импорт активности',
+  'Import from Health Connect': 'Импорт из Health Connect',
   'Pull your history with a Hevy Pro API key': 'Загрузить историю с API-ключом Hevy Pro',
   'Pull your history with a Hevy Pro API key. The key is only used for this import and is not saved.': 'Загрузить историю с API-ключом Hevy Pro. Ключ используется только для этого импорта и не сохраняется.',
   'Hevy API key': 'API-ключ Hevy',

@@ -43,7 +43,7 @@ vi.mock('../lib/mobile.js', () => ({
   isAndroid: () => Promise.resolve(mocks.android),
   shareExport: vi.fn(), syncReminder: vi.fn(),
 }))
-vi.mock('../lib/update.js', () => ({ checkForUpdate: () => Promise.resolve({ hasUpdate: false }), downloadAndInstall: vi.fn() }))
+vi.mock('../lib/update.js', () => ({ checkForUpdate: () => Promise.resolve({ hasUpdate: false }), downloadAndInstall: vi.fn(), APK_URL: 'https://example.test/android/pocketgym.apk' }))
 vi.mock('../lib/health-sync.js', () => ({
   healthStatus: () => Promise.resolve(mocks.status),
   loadHealth: () => Promise.resolve(mocks.health),
@@ -78,6 +78,9 @@ afterEach(() => {
 })
 
 const mount = async () => {
+  // A fresh tree each time: Settings reads the platform once, when it mounts.
+  act(() => root.unmount())
+  root = createRoot(host)
   await act(async () => { root.render(<Settings page="data" />) })
   await act(async () => { await Promise.resolve(); await Promise.resolve() })
 }
@@ -85,10 +88,11 @@ const row = text => [...host.querySelectorAll('.lrow')].find(r => r.textContent.
 const writeSwitch = () => row('Write to Health Connect')?.querySelector('[role="switch"]')
 
 describe('Settings — Health Connect', () => {
-  it('is not there on the web build, on iOS, or on a phone without Health Connect', async () => {
+  it('points the web app at the Android app, shows nothing on iOS, and says so where Health Connect is missing', async () => {
     mocks.MOBILE = false
     await mount()
-    expect(row('Health Connect')).toBeUndefined()
+    expect(row('Import from Health Connect')).toBeTruthy()
+    expect(writeSwitch()).toBeUndefined()
 
     mocks.MOBILE = true
     mocks.android = false
@@ -98,7 +102,8 @@ describe('Settings — Health Connect', () => {
     mocks.android = true
     mocks.status = { status: 'unsupported', granted: false }
     await mount()
-    expect(row('Health Connect')).toBeUndefined()
+    expect(row("isn't available on this phone")).toBeTruthy()
+    expect(writeSwitch()).toBeUndefined()
   })
 
   it('starts off, and turning it on goes through enableHealth', async () => {

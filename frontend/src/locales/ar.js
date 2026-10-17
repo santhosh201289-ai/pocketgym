@@ -750,6 +750,8 @@ export default {
   'Logged sets stay with the original exercise. The replacement will be inserted afterward.': 'تبقى المجموعات المسجلة مع التمرين الأصلي. سيُدرج البديل بعده.',
   'Rest after each set of this exercise. 0:00 means your default rest.': 'الراحة بعد كل مجموعة من هذا التمرين. عند 0:00 تُستخدم راحتك الافتراضية.',
   'Import from Hevy': 'استيراد من Hevy',
+  'Import activity': 'استيراد النشاط',
+  'Import from Health Connect': 'استيراد من Health Connect',
   'Pull your history with a Hevy Pro API key': 'اسحب سجلك باستخدام مفتاح Hevy Pro API',
   'Pull your history with a Hevy Pro API key. The key is only used for this import and is not saved.': 'اسحب سجلك باستخدام مفتاح Hevy Pro API. يُستخدم المفتاح لهذا الاستيراد فقط ولا يُحفظ.',
   'Hevy API key': 'مفتاح Hevy API',

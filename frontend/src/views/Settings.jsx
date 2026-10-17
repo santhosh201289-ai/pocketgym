@@ -795,7 +795,7 @@ export default function Settings({ page = null, find = null, via = null }) {
         {/* Android only: the system folder picker (#161). iOS shows Documents in Files already. */}
         {MOBILE && android && S.autoBackup && <BackupFolderRow />}
       </Section>
-      {MOBILE && android && <HealthConnectCard S={S} toast={toast} />}
+      {MOBILE ? android && <HealthConnectCard S={S} toast={toast} /> : <HealthConnectWebCard />}
       <Section title={t('Bring data in')}>
         <Row icon="download" iconTint="var(--teal)" title={t('Import backup')} accessory="chevron" onClick={() => fileRef.current.click()} />
         <Row icon="download" iconTint="var(--teal)" title={t('Import from another app')}
@@ -1449,6 +1449,18 @@ function RegisterInline({ close, setUser, pushState, pullState, toast }) {
 // its own file (lib/health-sync.js) and not in S, so it never switches on anywhere else. The card
 // stays out of the way on a phone without Health Connect, and only points to installing it on
 // Android 13 and lower, where it is an app of its own.
+// The web app cannot reach Health Connect; the Android app can. Say so where people look for it.
+function HealthConnectWebCard() {
+  return (
+    <Section title={t('Health Connect')}
+      footer={t('On iPhone, use Import activity below with your Apple Health export.')}>
+      <Row icon="figureRun" iconTint="var(--orange)" title={t('Import from Health Connect')}
+        subtitle={t('Steps, sleep and workouts from Google Fit, Samsung Health, Fitbit, Noise, Zepp and other bands come in through the Android app. Tap to get it, then turn this on there.')}
+        accessory="chevron" onClick={() => window.open(APK_URL, '_blank', 'noopener')} />
+    </Section>
+  )
+}
+
 function HealthConnectCard({ S, toast }) {
   const [st, setSt] = useState(null)
   const [h, setH] = useState(null)
@@ -1459,7 +1471,15 @@ function HealthConnectCard({ S, toast }) {
     const off = onHealthChange(f => { if (!gone) setH(f) })
     return () => { gone = true; off() }
   }, [])
-  if (!st || !h || st.status === 'unsupported') return null
+  if (!st || !h) return null
+  // Said, never hidden: a card that vanished left people looking for the switch (and for Pocket
+  // Gym in Health Connect's list, where it appears only once it has asked).
+  if (st.status === 'unsupported') return (
+    <Section title={t('Health Connect')}>
+      <Row icon="warning" iconTint="var(--orange)" title={t("Health Connect isn't available on this phone")}
+        subtitle={st.error ? t('It answered: {0}', st.error) : t('It needs Android 9 or newer.')} />
+    </Section>
+  )
 
   if (st.status !== 'available') return (
     <Section title={t('Health Connect')}>

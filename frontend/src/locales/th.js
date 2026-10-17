@@ -900,6 +900,8 @@ export default {
   'Music playing on this phone stops during a workout and does not resume by itself.': 'เพลงที่เล่นอยู่บนโทรศัพท์นี้จะหยุดระหว่างการออกกำลังกาย และจะไม่เล่นต่อเอง',
   'The quieter three-beep sound from before 1.3.9, instead of the louder chime.': 'เสียงบี๊บสามครั้งที่เบากว่าแบบก่อนเวอร์ชัน 1.3.9 แทนเสียงกริ่งที่ดังกว่า',
   'Import from Hevy': 'นำเข้าจาก Hevy',
+  'Import activity': 'นำเข้ากิจกรรม',
+  'Import from Health Connect': 'นำเข้าจาก Health Connect',
   'Pull your history with a Hevy Pro API key': 'ดึงประวัติด้วยคีย์ API ของ Hevy Pro',
   'Pull your history with a Hevy Pro API key. The key is only used for this import and is not saved.': 'ดึงประวัติด้วยคีย์ API ของ Hevy Pro คีย์ใช้สำหรับการนำเข้าครั้งนี้เท่านั้นและจะไม่ถูกบันทึก',
   'Hevy API key': 'คีย์ API ของ Hevy',

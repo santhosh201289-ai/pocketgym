@@ -45,7 +45,7 @@ export async function healthStatus() {
     const p = await plugin()
     if (!p) return { status: 'unsupported', granted: false }
     return await p.HC.status()
-  } catch { return { status: 'unsupported', granted: false } }
+  } catch (e) { return { status: 'unsupported', granted: false, error: e?.message || String(e) } }
 }
 
 /** Health Connect's own screen for what apps wrote, or its store page where it is missing. */
