@@ -1,6 +1,9 @@
 <div align="center">
 
-<img src="assets/banner.png" alt="Pocket Gym" width="720">
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="Logos/PocketGym-primary-horizontal-dark@4x.png">
+  <img src="Logos/PocketGym-primary-horizontal-light@4x.png" alt="Pocket Gym" width="480">
+</picture>
 
 **A self-hosted gym and body-weight tracker you actually own.**
 
