@@ -12,9 +12,11 @@ import { healthRecords, planSync, writtenIds } from './health-connect.js'
 import { exerciseNameFor } from './i18n-core.js'
 import { EXIDX } from './exercises.js'
 import { speedUnitOf } from './speed.js'
+import { fromHealthConnect } from './health-read.js'
+import { mergeDays, addSessions } from './activity.js'
 
 export const HEALTH_FILE = 'pocketgym-health.json'
-const OFF = { on: false, written: {}, at: 0, error: null }
+const OFF = { on: false, written: {}, at: 0, error: null, readOn: false, readAt: 0, readError: null }
 
 // Wrapped in an object, as in rest-alert.js: a Capacitor plugin proxy answers `then`, so a
 // promise resolved with the bare proxy never settles.
@@ -163,15 +165,101 @@ export async function disableHealth({ removeWritten = false } = {}) {
   return out
 }
 
+/* ---------------------------------------------------------------- reading ------------------ */
+// The other direction: steps, sleep, resting heart rate and the sessions other apps and watches
+// log (NoiseFit, Zepp, Samsung Health, Fitbit, Garmin Connect…) come into S.activity and
+// S.sessions, which sync to the server like everything else. Off until the user turns it on;
+// the read permissions are asked for on their own, apart from the write side's.
+
+// How far back the first read goes, and how much each later one overlaps the last, so a band
+// that syncs to its app hours late still lands. Health Connect itself lets an app read 30 days
+// before its permission was granted.
+const FIRST_DAYS = 30
+const OVERLAP_MS = 2 * 86400000
+// Not more often than this from the foreground listener; "Sync now" always reads.
+const PULL_EVERY_MS = 15 * 60000
+let applyFn = null
+let pulling = null
+
+/**
+ * Reads what Health Connect holds since the last read and merges it in. Resolves with
+ * { days, sessions } — how many days changed and sessions were added — or null while it is off.
+ */
+export function pullHealth({ force = false } = {}) {
+  if (!MOBILE) return Promise.resolve(null)
+  if (pulling) return pulling
+  pulling = (async () => {
+    const h = await loadHealth()
+    if (!h.readOn || !applyFn) return null
+    if (!force && Date.now() - (h.readAt || 0) < PULL_EVERY_MS) return null
+    const p = await plugin()
+    if (!p) return null
+    const since = h.readAt ? h.readAt - OVERLAP_MS : Date.now() - FIRST_DAYS * 86400000
+    let res
+    try { res = await p.HC.read({ since }) } catch (e) {
+      const out = { ...h, readError: e?.code === 'permission' ? 'permission' : e?.code === 'unavailable' ? 'unavailable' : 'failed' }
+      await saveHealth(out); told(out)
+      return null
+    }
+    const got = fromHealthConnect(res)
+    let counts = { days: 0, sessions: 0 }
+    applyFn(st => {
+      const d = mergeDays(st.activity || [], got.days, 'Health Connect')
+      const a = addSessions(st.sessions || [], got.sessions, 'Health Connect')
+      if (d.changed) st.activity = d.activity
+      if (a.added) st.sessions = a.sessions
+      counts = { days: d.changed, sessions: a.added }
+    })
+    const out = { ...(await loadHealth()), readAt: Date.now(), readError: null }
+    await saveHealth(out); told(out)
+    return counts
+  })().finally(() => { pulling = null })
+  return pulling
+}
+
+/** Turning reading on: asks for the read permissions, then reads the last 30 days once. */
+export async function enableHealthRead() {
+  const p = await plugin()
+  if (!p) return { ok: false, reason: 'unsupported' }
+  const st = await p.HC.status().catch(() => ({ status: 'unsupported' }))
+  if (st.status !== 'available') return { ok: false, reason: st.status }
+  let kinds = null
+  if (!st.readGranted) {
+    const r = await p.HC.requestReadPermissions().catch(() => ({ granted: false, kinds: [] }))
+    kinds = r.kinds || []
+    // Partly granted is still worth reading (steps without sleep); nothing granted is not.
+    if (!r.granted && !kinds.length) return { ok: false, reason: 'denied' }
+  }
+  const h = await loadHealth()
+  await saveHealth({ ...h, readOn: true, readAt: 0, readError: null })
+  const counts = await pullHealth({ force: true })
+  return { ok: true, counts, partial: !!kinds && kinds.length < 7 }
+}
+
+/** Turning reading off. What was already imported stays in the log. */
+export async function disableHealthRead() {
+  if (pulling) await pulling.catch(() => {})
+  const h = await loadHealth()
+  const out = { ...h, readOn: false, readError: null }
+  await saveHealth(out); told(out)
+  return out
+}
+
 // Back in the foreground: a change synced from another device while the phone was away, or a
 // permission the user granted again in Health Connect's own settings, is picked up then.
 let started = false
-export function initHealthSync(getState) {
+export function initHealthSync(getState, apply) {
   if (!MOBILE || started) return
   started = true
+  applyFn = apply || null
   import('@capacitor/app').then(({ App }) => {
-    App.addListener('appStateChange', ({ isActive }) => { if (isActive) syncHealth(getState()).catch(() => {}) })
+    App.addListener('appStateChange', ({ isActive }) => {
+      if (!isActive) return
+      syncHealth(getState()).catch(() => {})
+      pullHealth().catch(() => {})
+    })
   }).catch(() => {})
+  setTimeout(() => pullHealth().catch(() => {}), 4000)
   // Once at launch, for a workout finished just before the app was closed. Reading the file here
   // also settles whether it is on, which the saves wait for (syncHealth).
   setTimeout(() => loadHealth().then(() => syncHealth(getState())).catch(() => {}), 3000)

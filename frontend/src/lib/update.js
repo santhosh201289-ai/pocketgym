@@ -1,14 +1,18 @@
-// Update check — compares the installed version (__APP_VERSION__) against
-// the latest release tag on GitLab and optionally downloads + installs the APK.
+// Update check — compares the installed version (__APP_VERSION__) against the latest APK the
+// Pocket Gym server publishes, and optionally downloads + installs it.
 //
-// The GitLab releases API is public for this project, so no token is needed.
-// On Android (Capacitor), the APK asset is downloaded to the cache directory
-// and handed to the system installer via a content:// URI.
+// The server publishes `latest.json` ({ version, apk, sha256 }) next to the APK, under
+// UPDATE_BASE (scripts/android/build-apk.sh writes both). On Android (Capacitor) the APK is
+// downloaded to the cache directory, checked against its SHA-256 and handed to the system
+// installer via a content:// URI.
 
 import { MOBILE } from './mobile.js'
 
-const GITLAB_PROJECT_ID = 'DuarteSantos8%2Fpocketgym'
-const RELEASES_URL = `https://gitlab.com/api/v4/projects/${GITLAB_PROJECT_ID}/releases`
+/** Where the Android app is published. Set VITE_UPDATE_BASE at build time to move it. */
+export const UPDATE_BASE = (import.meta.env?.VITE_UPDATE_BASE || 'https://pocketgym.cloud/android/').replace(/\/?$/, '/')
+const LATEST_URL = UPDATE_BASE + 'latest.json'
+/** The APK itself, for the web app's "Get the Android app" row. */
+export const APK_URL = UPDATE_BASE + 'pocketgym.apk'
 
 /**
  * Compares two semver strings (e.g. "1.2.11" vs "1.3.0").
@@ -49,27 +53,16 @@ export async function checkForUpdate() {
   return cached
 }
 async function fetchLatest() {
-  const res = await fetch(RELEASES_URL + '?per_page=1')
-  if (!res.ok) throw new Error(`GitLab API ${res.status}`)
-  const releases = await res.json()
-  if (!releases.length) return { hasUpdate: false, latestVersion: __APP_VERSION__, apkUrl: null, hashUrl: null }
-
-  const latest = releases[0]
-  const latestVersion = latest.tag_name.replace(/^v/, '')
+  const res = await fetch(LATEST_URL, { cache: 'no-cache' })
+  if (res.status === 404) return { hasUpdate: false, latestVersion: __APP_VERSION__, apkUrl: null, hashUrl: null, sha256: null }
+  if (!res.ok) throw new Error(`Update check ${res.status}`)
+  const latest = await res.json()
+  const latestVersion = String(latest.version || '').replace(/^v/, '')
+  if (!latestVersion) return { hasUpdate: false, latestVersion: __APP_VERSION__, apkUrl: null, hashUrl: null, sha256: null }
   const hasUpdate = compareSemver(latestVersion, __APP_VERSION__) > 0
-
-  // Find the APK asset among the release links (generic package links) or assets.sources
-  let apkUrl = null
-  let hashUrl = null
-  if (latest.assets?.links?.length) {
-    const apkLink = latest.assets.links.find(l => /\.apk$/i.test(l.url) || /\.apk$/i.test(l.direct_asset_url))
-    if (apkLink) apkUrl = apkLink.direct_asset_url || apkLink.url
-    // Look for a matching .sha256 hash file
-    const hashLink = latest.assets.links.find(l => /\.apk\.sha256$/i.test(l.url) || /\.apk\.sha256$/i.test(l.direct_asset_url) || /sha256/i.test(l.name))
-    if (hashLink) hashUrl = hashLink.direct_asset_url || hashLink.url
-  }
-
-  return { hasUpdate, latestVersion, apkUrl, hashUrl }
+  const apkUrl = latest.apk ? new URL(latest.apk, UPDATE_BASE).href : APK_URL
+  // The checksum comes in the same answer; hashUrl stays for callers that fetch a .sha256 file.
+  return { hasUpdate, latestVersion, apkUrl, hashUrl: null, sha256: latest.sha256 || null }
 }
 
 /**
@@ -93,7 +86,7 @@ export async function sha256(buffer) {
 export async function downloadAndInstall(url, expectedHash = null, onProgress = null) {
   if (!MOBILE) {
     // On web, just open the release page
-    window.open('https://gitlab.com/DuarteSantos8/opengym/-/releases', '_blank', 'noopener')
+    window.open(APK_URL, '_blank', 'noopener')
     return
   }
 

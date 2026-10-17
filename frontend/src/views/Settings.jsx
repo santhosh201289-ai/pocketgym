@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, forwardRef, useSyncExternalStore } from 'react'
 import { useNavigate, useParams, useLocation, Navigate } from 'react-router-dom'
 import { useStore, DEF, hasData } from '../store/useStore.js'
-import { healthStatus, loadHealth, enableHealth, disableHealth, openHealthConnect, onHealthChange } from '../lib/health-sync.js'
+import { healthStatus, loadHealth, enableHealth, disableHealth, openHealthConnect, onHealthChange, enableHealthRead, disableHealthRead, pullHealth } from '../lib/health-sync.js'
 import { workoutControls } from '../lib/workout-controls.js'
 import { speedUnitOf } from '../lib/speed.js'
 import { formulaOf, FORMULA_NAMES } from '../lib/onerm.js'
@@ -31,7 +31,7 @@ import { getMediaStatus, subscribeMediaStatus, pendingRefCount } from '../lib/me
 import { limitsFrom, fmtMB, MB } from '../lib/media-limits.js'
 import { setRestAccent } from '../lib/rest-alert.js'
 import { CUSTOM, accentKey, adjustedIn, applyAccent, cleanHex, inkOn, isGrey } from '../lib/accent.js'
-import { checkForUpdate, downloadAndInstall } from '../lib/update.js'
+import { checkForUpdate, downloadAndInstall, APK_URL } from '../lib/update.js'
 import { forgetCoach } from '../lib/coach-api.js'
 import { REST_MAX, REST_PAUSE_MIN, REST_PAUSE_MAX, fmtRest, fmtDuration } from '../lib/duration.js'
 import { starterPlanSheet, confirmSheet, importFromApp, importFromHevy, equipmentProfileSheet, plateInventorySheet, dumbbellInventorySheet, menuSheet } from '../sheets.jsx'
@@ -234,8 +234,8 @@ export default function Settings({ page = null, find = null, via = null }) {
           try {
             // The release always publishes the checksum next to the APK. Without it the file is
             // not installed — a sideloaded binary is exactly the thing that should be verified.
-            let expectedHash = null
-            if (updateInfo.hashUrl) {
+            let expectedHash = updateInfo.sha256 || null
+            if (!expectedHash && updateInfo.hashUrl) {
               try {
                 const hashRes = await fetch(updateInfo.hashUrl)
                 if (hashRes.ok) expectedHash = (await hashRes.text()).split(/\s/)[0]
@@ -253,8 +253,8 @@ export default function Settings({ page = null, find = null, via = null }) {
         },
       })
     } else {
-      // Update available but no APK asset — open the releases page
-      window.open('https://gitlab.com/DuarteSantos8/opengym/-/releases', '_blank', 'noopener')
+      // Update available but no APK listed: the APK's own address
+      window.open(APK_URL, '_blank', 'noopener')
     }
   }
 
@@ -824,7 +824,7 @@ export default function Settings({ page = null, find = null, via = null }) {
       {/* Updates. On Android the row is always there: it checks on demand and installs when a
           release is newer (checksum verified, see onUpdateRowClick). On the web the app updates
           with its server, so the row points at the APK for the phone instead. iOS has no APK. */}
-      <Section footer={MOBILE ? (android ? t('Releases are checked on gitlab.com. The download is verified against its checksum before the installer opens.') : null) : t('The web app updates together with your server. The Android app installs its own updates from here.')}>
+      <Section footer={MOBILE ? (android ? t('Updates come from your Pocket Gym server. The download is verified against its checksum before the installer opens.') : null) : t('The web app updates together with your server. The Android app installs its own updates from here.')}>
         <Row icon="info" iconTint="var(--grey)" title={t('Version')} value={'v' + __APP_VERSION__} />
         {MOBILE
           ? android && <Row icon="download" iconTint="var(--green)"
@@ -833,8 +833,8 @@ export default function Settings({ page = null, find = null, via = null }) {
               accessory="chevron"
               onClick={() => (updateInfo?.hasUpdate ? onUpdateRowClick() : checkNow())} />
           : <Row icon="download" iconTint="var(--green)" title={t('Get the Android app')}
-              subtitle={t('Download the APK from opengym.ch')} accessory="chevron"
-              onClick={() => window.open('https://opengym.ch/#download', '_blank', 'noopener')} />}
+              subtitle={t('Steps, sleep and workouts from Health Connect, synced here')} accessory="chevron"
+              onClick={() => window.open(APK_URL, '_blank', 'noopener')} />}
       </Section>
       {/* "Add to Home screen": not inside the phone app, and not once it is installed. */}
       {!MOBILE && !standalone() && <Section title={t('Tip')}>
@@ -1498,9 +1498,36 @@ function HealthConnectCard({ S, toast }) {
     ],
   })
 
+  const readOn = async () => {
+    setBusy(true)
+    try {
+      const r = await enableHealthRead()
+      setH(await loadHealth())
+      if (!r.ok) toast(r.reason === 'denied' ? t('Health Connect permission not granted') : t('Could not read from Health Connect'))
+      else toast(r.partial ? t('Importing what you allowed. Allow more in Health Connect any time.') : t('Importing from Health Connect'))
+    } catch { toast(t('Could not read from Health Connect')) }
+    setBusy(false)
+  }
+  const readOff = async () => { setBusy(true); try { setH(await disableHealthRead()) } catch { /* stays as it was */ } setBusy(false) }
+  const readNow = async () => {
+    setBusy(true)
+    try {
+      const c = await pullHealth({ force: true })
+      toast(c ? t('{0} new sessions, {1} days updated', c.sessions, c.days) : t('Could not read from Health Connect'))
+    } catch { toast(t('Could not read from Health Connect')) }
+    setBusy(false)
+  }
+
   return (
     <Section title={t('Health Connect')}
-      footer={h.on ? t('Workouts and weigh-ins go to Health Connect when you finish or change them. Pocket Gym reads nothing back.') : null}>
+      footer={t('Your band or watch app (NoiseFit, Zepp, Samsung Health, Fitbit, Garmin Connect…) has to share with Health Connect for its data to come in. Imported activity syncs to your other devices; what Pocket Gym writes stays on this phone.')}>
+      <Row icon="figureRun" iconTint="var(--orange)" title={t('Import from Health Connect')}
+        subtitle={h.readOn && h.readAt ? t('Last read {0}', new Date(h.readAt).toLocaleString()) : t('Steps, sleep, resting heart rate, runs, rides and swims')}>
+        <Switch checked={!!h.readOn} disabled={busy} onChange={v => (v ? readOn() : readOff())} />
+      </Row>
+      {h.readOn && h.readError === 'permission' && <Row icon="warning" iconTint="var(--orange)"
+        title={t('Permission withdrawn. Tap to allow again')} accessory="chevron" onClick={readOn} />}
+      {h.readOn && <Row icon="download" iconTint="var(--teal)" title={t('Sync now')} accessory="chevron" onClick={readNow} />}
       <Row icon="heart" iconTint="var(--red)" title={t('Write to Health Connect')}
         subtitle={t('Finished workouts and weigh-ins, from this phone only.')}>
         <Switch checked={!!h.on} disabled={busy} onChange={v => (v ? turnOn() : askOff())} />
