@@ -54,6 +54,14 @@ export function writeState(dir, uid, S) {
 }
 
 /** A profile that has consented and has some history — the usual starting point. */
+/* Fixture dates are written as in July 2026 and moved forward by whole weeks (so every weekday
+ * stays the weekday it was written for) until the latest, 2026-07-20, falls within the last
+ * fortnight. The Coach reads a window that ends today (MAX_WEEKS in coach/core/payload.js); fixed
+ * dates aged out of it and the suite started failing on the calendar alone. */
+const WEEK_MS = 7 * 86400000;
+const SHIFT_WEEKS = Math.max(0, Math.floor((Date.now() - WEEK_MS - Date.UTC(2026, 6, 20)) / WEEK_MS));
+export const day = s => new Date(Date.parse(s + 'T00:00:00Z') + SHIFT_WEEKS * WEEK_MS).toISOString().slice(0, 10);
+
 export function sampleState(over = {}) {
   return {
     unit: 'kg', lang: 'en', effort: 'rpe', targetW: 80,
@@ -68,10 +76,10 @@ export function sampleState(over = {}) {
     week: { 1: 'r1', 3: 'r1', 5: 'r1' },
     dayPlan: {},
     exWeights: { '0001': { w: 20 } },
-    bodyweight: [{ d: '2026-07-01', w: 78 }, { d: '2026-07-20', w: 78.5 }],
+    bodyweight: [{ d: day('2026-07-01'), w: 78 }, { d: day('2026-07-20'), w: 78.5 }],
     customEx: [],
     workouts: [{
-      id: 'w1', d: '2026-07-20', name: 'Full body A', start: 1000, end: 1000 + 45 * 60000, vol: 600, prs: [],
+      id: 'w1', d: day('2026-07-20'), name: 'Full body A', start: 1000, end: 1000 + 45 * 60000, vol: 600, prs: [],
       entries: [{
         id: '0001', target: { sets: 3, reps: 10, weight: 20 },
         sets: [{ w: 20, r: 10, done: true, rpe: 9.5 }, { w: 20, r: 9, done: true, rpe: 10 }, { w: 20, r: 8, done: true, rpe: 10 }]
