@@ -29,10 +29,10 @@ if [ ! -f "$KEYS/release.jks" ]; then
   echo "No signing key yet: creating $KEYS/release.jks (back this directory up)."
   umask 077
   head -c 48 /dev/urandom | base64 | tr -dc 'A-Za-z0-9' | head -c 32 > "$KEYS/password"
-  docker run --rm -v "$KEYS:/keys" "$IMAGE" bash -c \
+  docker run --rm -u root -v "$KEYS:/keys" "$IMAGE" bash -c \
     "keytool -genkeypair -keystore /keys/release.jks -alias $ALIAS -keyalg RSA -keysize 4096 -validity 10000 \
        -storepass \"\$(cat /keys/password)\" -keypass \"\$(cat /keys/password)\" \
-       -dname 'CN=Pocket Gym, O=Pocket Gym' && chown $(id -u):$(id -g) /keys/release.jks"
+       -dname 'CN=Pocket Gym, O=Pocket Gym' && chown $(id -u):$(id -g) /keys/release.jks && chmod 600 /keys/release.jks"
 fi
 
 docker run --rm \

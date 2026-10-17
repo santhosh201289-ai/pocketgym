@@ -1,7 +1,8 @@
 # The phone app (Android and iOS)
 
-**Just want the app?** Download the APK from the
-[latest release](https://github.com/santhosh201289-ai/pocketgym/releases/latest) and read
+**Just want the app?** Download it from your Pocket Gym server —
+[pocketgym.cloud/android/pocketgym.apk](https://pocketgym.cloud/android/pocketgym.apk), or
+Settings → **Get the Android app** in the web app — and read
 [how the phone app works](#how-the-phone-app-works) and
 [connecting it to your server](#connecting-the-app-to-your-own-server). On an iPhone, see
 [what's possible](#iphone--whats-actually-possible). Everything from [Prerequisites](#prerequisites)
@@ -177,6 +178,38 @@ video autoplays muted in the Android WebView; a long video seeks from its `_capa
 URL on both platforms; an iPhone photo arrives as JPEG and an iPhone video (HEVC or H.264 MOV)
 plays; the zip export opens the share sheet.
 
+### Importing from Health Connect (Android)
+
+Settings → **Import from Health Connect** brings steps, distance, active energy, resting heart
+rate, sleep, and the runs, rides, walks and swims other apps log into Pocket Gym's activity
+(Home → *Today's activity*, Stats → *Steps & cardio*). Whatever your band or watch is — Noise
+(NoiseFit), Mi and Amazfit (Zepp / Mi Fitness), Samsung, Fitbit, Garmin Connect — turn on
+sharing with Health Connect in *its* app first; Pocket Gym reads what arrives there.
+
+- **Asked for separately** from the write side below: seven read permissions, and granting only
+  some of them (steps but not sleep) still imports what was granted.
+- **When it reads:** at launch, when the app comes back to the foreground (at most every 15
+  minutes), and on **Sync now**. Each read goes back two days before the last one, so a band
+  that syncs to its app late still lands. The first read covers the last 30 days — as far back
+  as Health Connect lets an app see before its permission was granted.
+- **Synced:** unlike the write side, what is imported is part of your profile and reaches your
+  other devices and the web app through the server.
+- **No loops:** sessions Pocket Gym itself wrote to Health Connect are not read back.
+- **Counted once:** daily totals are Health Connect's own, which count a step once however many
+  apps recorded it; a night tracked by two apps takes the one that recorded more.
+
+### Publishing the app from your own server
+
+`scripts/android/build-apk.sh`, run on the server from the repo root, builds and signs the APK in
+Docker (the `cimg/android` image the upstream CI uses) and writes `pocketgym.apk`,
+`pocketgym-<version>.apk`, its `.sha256` and `latest.json` to `/opt/pocketgym-android/dist`.
+Serve that directory at `/android/` on your domain; the app's update check
+(`frontend/src/lib/update.js`, `VITE_UPDATE_BASE`) reads `latest.json` there and verifies the
+download's checksum before installing. The signing key is created on the first run in
+`/opt/pocketgym-android/keys` — **back it up**: an update signed with any other key will not
+install over the app already on a phone. Bump `version` in `frontend/package.json` and
+`versionCode`/`versionName` in `android/app/build.gradle` for each release.
+
 ### Health Connect (Android)
 
 Settings → **Health Connect** writes finished workouts and weigh-ins to Health Connect, Android's
@@ -191,8 +224,8 @@ that.
   Each weigh-in as a weight record, in kilograms. A workout without a real start and end is left
   out rather than given made-up times. `src/lib/health-connect.js` works this out; its tests
   pin it.
-- **Write-only.** The manifest declares `WRITE_EXERCISE` and `WRITE_WEIGHT` and nothing else, and
-  Pocket Gym reads nothing back.
+- **Writing is its own switch.** It needs `WRITE_EXERCISE` and `WRITE_WEIGHT` only; reading
+  (above) asks for its own permissions when you turn that on.
 - **No duplicates.** Every record carries Pocket Gym's own id as its `clientRecordId`
   (`pocketgym-w-<workout id>`, `pocketgym-bw-<day>`), so writing it again replaces it. An edited workout
   or weigh-in is written again; a deleted one is removed from Health Connect.

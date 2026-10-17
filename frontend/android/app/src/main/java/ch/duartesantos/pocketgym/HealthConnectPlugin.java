@@ -58,7 +58,7 @@ import org.json.JSONObject;
 
 /**
  * Writes finished workouts and weigh-ins to Health Connect (#200), the phone's own store for
- * health data, so other apps can read them. Write-only and off until the user turns it on in
+ * health data, so other apps can read them, and reads activity back (read()). Each side is off until the user turns it on in
  * Settings: no permission is asked for before that. What to write is worked out in JS
  * (lib/health-connect.js); this side only turns those plain objects into records.
  *
