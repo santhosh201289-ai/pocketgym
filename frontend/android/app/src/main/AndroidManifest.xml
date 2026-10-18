@@ -30,25 +30,30 @@
             </intent-filter>
         </activity>
 
-        <!-- Health Connect (#200) opens the app from its permission screen to say why the
-             permissions are asked for: Android 14 and up through VIEW_PERMISSION_USAGE, 13 and
-             lower through the Health Connect app's rationale action. Both land in the app. -->
+        <!-- Health Connect (#200) opens this from its permission screen and its app list, to say why
+             the permissions are asked for: Android 14 and up through VIEW_PERMISSION_USAGE (the
+             alias, guarded by START_VIEW_PERMISSION_USAGE), 13 and lower through the Health Connect
+             app's rationale action. Without both, Android does not count Pocket Gym as a health app:
+             it is left out of Health Connect's list and its permission requests come to nothing.
+             Its own small screen, not MainActivity (singleTask, the whole web app): pointed there, the
+             permission flow showed a blank screen. -->
+        <activity
+            android:name=".HealthPermissionsActivity"
+            android:exported="true"
+            android:label="Pocket Gym and your health data"
+            android:theme="@style/AppTheme.NoActionBar">
+            <intent-filter>
+                <action android:name="androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE" />
+            </intent-filter>
+        </activity>
         <activity-alias
             android:name="ViewPermissionUsageActivity"
             android:exported="true"
-            android:targetActivity=".MainActivity"
+            android:targetActivity=".HealthPermissionsActivity"
             android:permission="android.permission.START_VIEW_PERMISSION_USAGE">
             <intent-filter>
                 <action android:name="android.intent.action.VIEW_PERMISSION_USAGE" />
                 <category android:name="android.intent.category.HEALTH_PERMISSIONS" />
-            </intent-filter>
-        </activity-alias>
-        <activity-alias
-            android:name="HealthPermissionsRationaleActivity"
-            android:exported="true"
-            android:targetActivity=".MainActivity">
-            <intent-filter>
-                <action android:name="androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE" />
             </intent-filter>
         </activity-alias>
 

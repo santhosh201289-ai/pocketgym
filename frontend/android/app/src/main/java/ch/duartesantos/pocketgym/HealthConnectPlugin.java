@@ -36,6 +36,10 @@ import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.ActivityCallback;
 import com.getcapacitor.annotation.CapacitorPlugin;
+import com.getcapacitor.annotation.Permission;
+import com.getcapacitor.annotation.PermissionCallback;
+import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -83,7 +87,22 @@ import org.json.JSONObject;
  *   await HC.requestReadPermissions(); // { granted } — the read side, asked for on its own
  *   await HC.read({ since });       // { days: [...], sleep: [...], sessions: [...] } since epoch ms
  */
-@CapacitorPlugin(name = "HealthConnect")
+// The permissions again as Capacitor aliases: on Android 14 and up health permissions are runtime
+// permissions, asked for through the platform's own request (requestPermissionForAlias), which is
+// the path Android documents; below 14 Health Connect is an app with its own request screen.
+@CapacitorPlugin(name = "HealthConnect", permissions = {
+        @Permission(alias = "write", strings = {
+                "android.permission.health.WRITE_EXERCISE",
+                "android.permission.health.WRITE_WEIGHT" }),
+        @Permission(alias = "read", strings = {
+                "android.permission.health.READ_STEPS",
+                "android.permission.health.READ_DISTANCE",
+                "android.permission.health.READ_ACTIVE_CALORIES_BURNED",
+                "android.permission.health.READ_RESTING_HEART_RATE",
+                "android.permission.health.READ_HEART_RATE",
+                "android.permission.health.READ_SLEEP",
+                "android.permission.health.READ_EXERCISE" }),
+})
 public class HealthConnectPlugin extends Plugin {
 
     private static final String PROVIDER = "com.google.android.apps.healthdata";
@@ -178,9 +197,26 @@ public class HealthConnectPlugin extends Plugin {
             call.reject("Health Connect is not available", "unavailable");
             return;
         }
+        if (Build.VERSION.SDK_INT >= 34) {
+            requestPermissionForAlias("write", call, "writePermissionsAnswered");
+            return;
+        }
         ActivityResultContract<Set<String>, Set<String>> contract = PermissionController.createRequestPermissionResultContract(PROVIDER);
         Intent intent = contract.createIntent(getContext(), permissions());
         startActivityForResult(call, intent, "permissionsResult");
+    }
+
+    @PermissionCallback
+    private void writePermissionsAnswered(PluginCall call) {
+        worker.execute(() -> {
+            try {
+                JSObject r = new JSObject();
+                r.put("granted", granted().containsAll(permissions()));
+                call.resolve(r);
+            } catch (Exception e) {
+                call.reject(e.getMessage(), "failed");
+            }
+        });
     }
 
     @ActivityCallback
@@ -255,14 +291,61 @@ public class HealthConnectPlugin extends Plugin {
             call.reject("Health Connect is not available", "unavailable");
             return;
         }
+        if (Build.VERSION.SDK_INT >= 34) {
+            requestPermissionForAlias("read", call, "readPermissionsAnswered");
+            return;
+        }
         ActivityResultContract<Set<String>, Set<String>> contract = PermissionController.createRequestPermissionResultContract(PROVIDER);
         Intent intent = contract.createIntent(getContext(), readPermissions());
         startActivityForResult(call, intent, "readPermissionsResult");
     }
 
+    @PermissionCallback
+    private void readPermissionsAnswered(PluginCall call) {
+        answerRead(call);
+    }
+
     @ActivityCallback
     private void readPermissionsResult(PluginCall call, ActivityResult result) {
         if (call == null) return;
+        answerRead(call);
+    }
+
+    /**
+     * What this phone says about Pocket Gym and Health Connect, for the Settings check: whether the
+     * SDK is there, which health permissions are granted, and whether Android finds the two screens
+     * Health Connect needs before it counts an app as a health app (a missing one is the usual reason
+     * an app is absent from its list and its requests come to nothing).
+     */
+    @PluginMethod
+    public void diagnose(PluginCall call) {
+        JSObject r = new JSObject();
+        r.put("android", Build.VERSION.SDK_INT);
+        r.put("device", Build.MANUFACTURER + " " + Build.MODEL);
+        r.put("status", sdkStatus());
+        PackageManager pm = getContext().getPackageManager();
+        String own = getContext().getPackageName();
+        Intent usage = new Intent("android.intent.action.VIEW_PERMISSION_USAGE").addCategory("android.intent.category.HEALTH_PERMISSIONS").setPackage(own);
+        Intent rationale = new Intent("androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE").setPackage(own);
+        r.put("usageScreen", !pm.queryIntentActivities(usage, 0).isEmpty());
+        r.put("rationaleScreen", !pm.queryIntentActivities(rationale, 0).isEmpty());
+        JSArray runtime = new JSArray();
+        for (String p : READ) if (getContext().checkSelfPermission(p) == PackageManager.PERMISSION_GRANTED) runtime.put(p.substring(p.lastIndexOf('.') + 1));
+        r.put("runtimeGranted", runtime);
+        if (!"available".equals(sdkStatus())) { call.resolve(r); return; }
+        worker.execute(() -> {
+            try {
+                JSArray g = new JSArray();
+                for (String p : granted()) g.put(p.substring(p.lastIndexOf('.') + 1));
+                r.put("granted", g);
+            } catch (Exception e) {
+                r.put("error", e.getClass().getSimpleName() + ": " + e.getMessage());
+            }
+            call.resolve(r);
+        });
+    }
+
+    private void answerRead(PluginCall call) {
         // Partly granted is still useful (steps without sleep): report what stands, per kind.
         worker.execute(() -> {
             try {

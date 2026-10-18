@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, forwardRef, useSyncExternalStore } from 'react'
 import { useNavigate, useParams, useLocation, Navigate } from 'react-router-dom'
 import { useStore, DEF, hasData } from '../store/useStore.js'
-import { healthStatus, loadHealth, enableHealth, disableHealth, openHealthConnect, onHealthChange, enableHealthRead, disableHealthRead, pullHealth } from '../lib/health-sync.js'
+import { healthStatus, loadHealth, enableHealth, disableHealth, openHealthConnect, onHealthChange, enableHealthRead, disableHealthRead, pullHealth, diagnoseHealth } from '../lib/health-sync.js'
 import { workoutControls } from '../lib/workout-controls.js'
 import { speedUnitOf } from '../lib/speed.js'
 import { formulaOf, FORMULA_NAMES } from '../lib/onerm.js'
@@ -1449,6 +1449,27 @@ function RegisterInline({ close, setUser, pushState, pullState, toast }) {
 // its own file (lib/health-sync.js) and not in S, so it never switches on anywhere else. The card
 // stays out of the way on a phone without Health Connect, and only points to installing it on
 // Android 13 and lower, where it is an app of its own.
+// What the phone says about Pocket Gym and Health Connect, in words — the screen to send when the
+// switch does nothing, or Pocket Gym is missing from Health Connect's list.
+async function showHealthDiagnosis() {
+  const d = await diagnoseHealth()
+  const yes = v => (v ? t('Yes') : t('No'))
+  const lines = [
+    [t('Phone'), `${d.device || '?'} · Android API ${d.android ?? '?'}`],
+    [t('Health Connect'), d.status || '?'],
+    [t('Registered as a health app'), d.usageScreen == null ? '?' : yes(d.usageScreen && d.rationaleScreen)],
+    [t('Allowed in Health Connect'), (d.granted || []).join(', ') || t('Nothing yet')],
+    ...(d.error ? [[t('Error'), d.error]] : []),
+  ]
+  useUI.getState().openSheet(() => <>
+    <h3>{t('Health Connect setup')}</h3>
+    {lines.map(([k, v]) => <div key={k} className="row between" style={{ padding: '8px 2px', borderBottom: '1px solid var(--sep)', gap: 12 }}>
+      <span className="small muted">{k}</span><span className="small" style={{ textAlign: 'end', wordBreak: 'break-word' }}>{v}</span>
+    </div>)}
+    <div className="small dim" style={{ marginTop: 12 }}>{t('If something here looks wrong, send a screenshot of this screen.')}</div>
+  </>)
+}
+
 // The web app cannot reach Health Connect; the Android app can. Say so where people look for it.
 function HealthConnectWebCard() {
   return (
@@ -1556,6 +1577,8 @@ function HealthConnectCard({ S, toast }) {
         title={t('Permission withdrawn. Tap to allow again')} accessory="chevron" onClick={turnOn} />}
       {h.on && <Row icon="list" iconTint="var(--blue)" title={t('Open Health Connect')}
         accessory="chevron" onClick={() => openHealthConnect().catch(() => {})} />}
+      <Row icon="info" iconTint="var(--grey)" title={t('Check Health Connect setup')}
+        accessory="chevron" onClick={showHealthDiagnosis} />
     </Section>
   )
 }

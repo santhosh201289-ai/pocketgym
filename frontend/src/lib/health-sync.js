@@ -48,6 +48,13 @@ export async function healthStatus() {
   } catch (e) { return { status: 'unsupported', granted: false, error: e?.message || String(e) } }
 }
 
+/** What the phone reports about Pocket Gym and Health Connect (HealthConnectPlugin.diagnose). */
+export async function diagnoseHealth() {
+  const p = await plugin()
+  if (!p) return { status: 'unsupported', error: 'not the Android app' }
+  try { return await p.HC.diagnose() } catch (e) { return { error: e?.message || String(e) } }
+}
+
 /** Health Connect's own screen for what apps wrote, or its store page where it is missing. */
 export async function openHealthConnect() {
   const p = await plugin()
