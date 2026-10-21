@@ -2150,3 +2150,10 @@ button.wl-summary{width:100%;padding:0 0 10px;text-align:start;border-radius:var
   :root[data-theme="light"] .brand-logo img.horizontal.dark{display:none}
   :root[data-theme="light"] .brand-logo img.horizontal.light{display:block}
 }
+
+/* Plan by voice (components/VoicePlan.jsx) */
+.voice-mic{width:76px;height:76px;border-radius:50%;border:0;background:var(--acc);color:var(--on-acc,#fff);font-size:34px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;transition:transform .15s}
+.voice-mic:active{transform:scale(.95)}
+.voice-mic.on{background:var(--red);animation:voice-pulse 1.2s ease-in-out infinite}
+@keyframes voice-pulse{0%,100%{box-shadow:0 0 0 0 rgba(255,59,48,.45)}50%{box-shadow:0 0 0 14px rgba(255,59,48,0)}}
+@media (prefers-reduced-motion:reduce){.voice-mic.on{animation:none}}

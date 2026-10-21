@@ -9,6 +9,7 @@ import {
   planHasRoutines, exportPlanFile, printWholePlan, importPlanFile,
 } from '../sheets.jsx'
 import Icon from '../components/Icon.jsx'
+import { voicePlanSheet } from '../components/VoicePlan.jsx'
 import { Button, Row, Section, Segmented } from '../components/ui.jsx'
 import SwipeRow from '../components/SwipeRow.jsx'
 import { copyRoutine, deleteRoutine, restoreRoutine, routineSnapshot } from '../lib/routines.js'
@@ -300,7 +301,10 @@ function Schedule({ S, update, nav, mode }) {
     </div>}
 
     {mode === 'week' ? <>
-      <h4 className="sec">{t('This week')}</h4>
+      <div className="row between plan-sec-h">
+        <h4 className="sec">{t('This week')}</h4>
+        <Button size="sm" variant="tinted" icon="mic" className="plan-sec-acts" onClick={voicePlanSheet}>{t('Plan by voice')}</Button>
+      </div>
       <div className="list plan-week">{weekOrder(ws).map(d => dayRow(d))}</div>
       <p className="sect-f">{t('Want two routines on one day? Tap the day and pick both.')}</p>
     </> : <div className="rotation">

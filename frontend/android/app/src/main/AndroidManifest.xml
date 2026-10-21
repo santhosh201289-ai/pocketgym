@@ -112,6 +112,8 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     <!-- Gym check-in: scanning a membership QR/barcode with the camera. -->
     <uses-permission android:name="android.permission.CAMERA" />
+    <!-- Planning by voice (SpeechPlugin): asked the first time the microphone is tapped. -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <!-- Health Connect (#200): each side asked for only when the user turns it on in Settings.
          Writing: finished workouts and weigh-ins. Reading: daily steps, distance, active energy,
          resting heart rate and sleep, and the runs, rides and swims other apps and watches log. -->
@@ -128,5 +130,9 @@
     <!-- Whether the Health Connect app is there, on Android 13 and lower. -->
     <queries>
         <package android:name="com.google.android.apps.healthdata" />
+        <!-- Android 11+ hides the speech recogniser from an app that does not name it here. -->
+        <intent>
+            <action android:name="android.speech.RecognitionService" />
+        </intent>
     </queries>
 </manifest>

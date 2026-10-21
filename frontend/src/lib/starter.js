@@ -135,3 +135,18 @@ export const buildStarterPlan = (id, equipment) => {
     ...(fit && { fit: { swapped: fit.swapped, dropped: fit.dropped } })
   }
 }
+
+// One starter routine by kind, fresh (new id), for a request that names a day's training and
+// finds no routine of that kind in the profile ("add a push workout on Tuesday",
+// lib/voice-plan.js). Fitted to `equipment` like a whole plan; null for a kind with no template.
+const ONE = {
+  push: PPL[0], pull: PPL[1], legs: PPL[2],
+  upper: UPPER_LOWER[0], lower: UPPER_LOWER[1], 'full body': FULL_BODY[0], '5x5': FIVE_BY_FIVE[0],
+}
+export const STARTER_KINDS = Object.keys(ONE)
+export const starterRoutine = (kind, equipment) => {
+  const r = ONE[kind]
+  if (!r) return null
+  const source = equipment ? fitRoutines([r], equipment).routines : [r]
+  return source.length ? build(source)[0] : null
+}
