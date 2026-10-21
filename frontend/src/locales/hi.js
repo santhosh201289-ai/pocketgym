@@ -656,6 +656,8 @@ export default {
   'Import from Health Connect': 'Health Connect से आयात करें',
   'Send activity from iPhone': 'iPhone से गतिविधि भेजें',
   'Strava': 'Strava',
+  'Activity and sleep': 'गतिविधि और नींद',
+  'Daily steps, sleep and resting heart rate, and your runs, rides, walks and swims from the same window.': 'उसी अवधि के रोज़ाना कदम, नींद और आराम की हृदय गति, और आपकी दौड़, साइकिलिंग, सैर और तैराकी।',
   'Pull your history with a Hevy Pro API key': 'Hevy Pro API कुंजी से अपना इतिहास लाएँ',
   'Pull your history with a Hevy Pro API key. The key is only used for this import and is not saved.': 'Hevy Pro API कुंजी से अपना इतिहास लाएँ। कुंजी केवल इस आयात के लिए उपयोग होती है और सहेजी नहीं जाती।',
   'Hevy API key': 'Hevy API कुंजी',

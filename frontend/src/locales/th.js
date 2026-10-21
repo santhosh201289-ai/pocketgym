@@ -904,6 +904,8 @@ export default {
   'Import from Health Connect': 'นำเข้าจาก Health Connect',
   'Send activity from iPhone': 'ส่งกิจกรรมจาก iPhone',
   'Strava': 'Strava',
+  'Activity and sleep': 'กิจกรรมและการนอน',
+  'Daily steps, sleep and resting heart rate, and your runs, rides, walks and swims from the same window.': 'จำนวนก้าวรายวัน การนอน และอัตราการเต้นของหัวใจขณะพัก รวมถึงการวิ่ง ปั่นจักรยาน เดิน และว่ายน้ำในช่วงเวลาเดียวกัน',
   'Pull your history with a Hevy Pro API key': 'ดึงประวัติด้วยคีย์ API ของ Hevy Pro',
   'Pull your history with a Hevy Pro API key. The key is only used for this import and is not saved.': 'ดึงประวัติด้วยคีย์ API ของ Hevy Pro คีย์ใช้สำหรับการนำเข้าครั้งนี้เท่านั้นและจะไม่ถูกบันทึก',
   'Hevy API key': 'คีย์ API ของ Hevy',

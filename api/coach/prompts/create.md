@@ -1,6 +1,6 @@
 # Task: build a weekly training plan
 
-Design a complete plan from `coachProfile` (their intake answers) and, if present, `history` (what they have already been lifting).
+Design a complete plan from `coachProfile` (their intake answers) and, if present, `history` (what they have already been lifting) and `activity` (how much they already run, ride, swim and walk, and how they sleep: someone running four times a week needs less leg volume to start).
 
 ## Constraints
 

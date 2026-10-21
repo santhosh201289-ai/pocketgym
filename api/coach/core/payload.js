@@ -444,6 +444,61 @@ function cleanCohort(c) {
   };
 }
 
+/* ---------- activity: steps, sleep, resting heart rate, cardio (lib/activity.js) ----------
+   From the phone, the band, the watch, an iPhone Shortcut or an import: what the lifter did and
+   how they slept around the training. Sent only once their consent names it (consent version 3,
+   frontend/src/lib/coach.js CONSENT_VERSION): a profile that agreed to the five categories before
+   this one existed sends none of it, whichever device or server builds the payload. Daily figures
+   for the last two weeks, a weekly line before that, and the cardio sessions themselves. */
+export const ACTIVITY_CONSENT = 3;
+export const ACTIVITY_DAILY = 14;
+export const ACTIVITY_SESSIONS = 40;
+const SESSION_KINDS = new Set(['run', 'walk', 'ride', 'swim', 'hike', 'other']);
+const amount = v => { const x = Number(num(v)); return Number.isFinite(x) && x >= 0 ? x : undefined; };
+const defined = o => Object.fromEntries(Object.entries(o).filter(([, v]) => v !== undefined));
+const mondayOf = d => { const t = new Date(d + 'T12:00:00Z'); t.setUTCDate(t.getUTCDate() - ((t.getUTCDay() + 6) % 7)); return iso(t); };
+const mean = xs => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : undefined);
+const round = (v, k = 1) => (v === undefined ? undefined : Math.round(v * k) / k);
+
+export const activityConsented = S => (Number(S?.coach?.consent?.version) || 0) >= ACTIVITY_CONSENT;
+
+export function activityOf(S, from, to = null) {
+  if (!activityConsented(S)) return null;
+  const inRange = d => d && (!from || d >= from) && (!to || d <= to);
+  const days = list(S.activity)
+    .map(e => ({ d: day(e?.d), steps: amount(e?.steps), sleepMin: amount(e?.sleepMin), restHr: amount(e?.restHr), activeKcal: amount(e?.activeKcal) }))
+    .filter(e => inRange(e.d))
+    .sort((a, b) => (a.d < b.d ? -1 : 1));
+  const sessions = list(S.sessions)
+    .filter(x => x && typeof x === 'object' && inRange(day(x.d)))
+    .map(x => defined({
+      d: day(x.d), type: SESSION_KINDS.has(x.type) ? x.type : 'other',
+      min: round(amount(x.durS) / 60), km: amount(x.distM) !== undefined ? round(amount(x.distM) / 1000, 10) : undefined,
+      avgHr: round(amount(x.avgHr)),
+    }))
+    .sort((a, b) => (a.d < b.d ? -1 : 1));
+  if (!days.length && !sessions.length) return null;
+  const weeks = new Map();
+  const wk = d => weeks.get(mondayOf(d)) || weeks.set(mondayOf(d), { days: [], cardio: [] }).get(mondayOf(d));
+  days.forEach(e => wk(e.d).days.push(e));
+  sessions.forEach(x => wk(x.d).cardio.push(x));
+  const avgOf = (xs, f) => mean(xs.map(e => e[f]).filter(v => v !== undefined && v > 0));
+  const weekly = [...weeks.entries()].sort(([a], [b]) => (a < b ? -1 : 1)).map(([week, w]) => defined({
+    week,
+    steps: round(avgOf(w.days, 'steps')),
+    sleepH: avgOf(w.days, 'sleepMin') !== undefined ? round(avgOf(w.days, 'sleepMin') / 60, 10) : undefined,
+    restHr: round(avgOf(w.days, 'restHr')),
+    cardio: w.cardio.length || undefined,
+    cardioMin: w.cardio.length ? round(w.cardio.reduce((a, x) => a + (x.min || 0), 0)) : undefined,
+  }));
+  return {
+    weekly,
+    daily: days.slice(-ACTIVITY_DAILY).map(e => defined({ d: e.d, steps: e.steps, sleepH: e.sleepMin !== undefined ? round(e.sleepMin / 60, 10) : undefined, restHr: e.restHr, activeKcal: e.activeKcal })),
+    sessions: sessions.slice(-ACTIVITY_SESSIONS),
+  };
+}
+const daysBefore = (d, n) => { const t = new Date(d + 'T12:00:00Z'); t.setUTCDate(t.getUTCDate() - n); return iso(t); };
+
 /* ---------- one workout, for a debrief ---------- */
 export function findWorkout(S, workoutId) {
   const all = (S.workouts || []).filter(w => w && w.d);
@@ -536,6 +591,9 @@ export function build(S, opts = {}) {
       since.setDate(since.getDate() - 28);
       const dated = !!on && Number.isFinite(since.getTime());
       p.bodyweight = { goal: num(S.targetW) ?? null, series: dated ? weighIns(S, iso(since), on) : [] };
+      // The week leading up to it: the sleep and the cardio a session is read against.
+      const act = dated ? activityOf(S, daysBefore(on, 7), on) : null;
+      if (act) p.activity = act;
     } else {
       p.session = null;
       p.previous = [];
@@ -551,6 +609,14 @@ export function build(S, opts = {}) {
     };
     p.aggregates = aggregates(S, workouts);
     p.bodyweight = { goal: num(S.targetW) ?? null, series: weighIns(S, p.window.from, null) };
+    {
+      const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - MAX_WEEKS * 7);
+      // At least the last two weeks, however short the training window: recovery reads days.
+      const twoWeeks = daysBefore(iso(new Date()), ACTIVITY_DAILY);
+      const from = p.window.from && p.window.from < twoWeeks ? p.window.from : twoWeeks;
+      const act = activityOf(S, from < iso(cutoff) ? iso(cutoff) : from, null);
+      if (act) p.activity = act;
+    }
     if (opts.note) p.userNote = String(opts.note).slice(0, MAX_NOTE_CHARS);
     if (opts.cohort) p.cohort = cleanCohort(opts.cohort);
     // A review names mostly what is already trained; 60 candidates is plenty for a swap.
@@ -569,6 +635,11 @@ export function build(S, opts = {}) {
         since: day((S.workouts || [])[0]?.d),
         workingWeights: Object.entries(best).map(([id, w]) => ({ id: ident(id), name: libraryName(id), best: w }))
       };
+    }
+    // How active they already are outside the gym: four weeks, enough to set volume against.
+    {
+      const act = activityOf(S, daysBefore(iso(new Date()), 28), null);
+      if (act) p.activity = act;
     }
     if (opts.refine && opts.previous) {
       p.refine = { text: String(opts.refine).slice(0, MAX_NOTE_CHARS), previous: opts.previous };

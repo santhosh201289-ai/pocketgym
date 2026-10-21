@@ -656,6 +656,8 @@ export default {
   'Import from Health Connect': 'Health Connect에서 가져오기',
   'Send activity from iPhone': 'iPhone에서 활동 보내기',
   'Strava': 'Strava',
+  'Activity and sleep': '활동과 수면',
+  'Daily steps, sleep and resting heart rate, and your runs, rides, walks and swims from the same window.': '같은 기간의 하루 걸음 수, 수면, 안정 시 심박수, 그리고 달리기, 자전거, 걷기, 수영 기록.',
   'Pull your history with a Hevy Pro API key': 'Hevy Pro API 키로 기록을 가져옵니다',
   'Pull your history with a Hevy Pro API key. The key is only used for this import and is not saved.': 'Hevy Pro API 키로 기록을 가져옵니다. 키는 이번 가져오기에만 사용되며 저장되지 않습니다.',
   'Hevy API key': 'Hevy API 키',
