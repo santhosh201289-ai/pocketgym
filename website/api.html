@@ -245,7 +245,7 @@ main.api-main .lead { color: var(--fg-2); max-width: 58ch; margin: 14px 0 0; fon
   <p class="api-facts">
     <span>OpenAPI 3.1.0</span>
     <span>Pocket Gym v1.4.0</span>
-    <span>73 endpoints</span>
+    <span>78 endpoints</span>
     <span>AGPL-3.0-or-later</span>
   </p>
 
@@ -1809,7 +1809,7 @@ main.api-main .lead { color: var(--fg-2); max-width: 58ch; margin: 14px 0 0; fon
 
 <section class="api-sec" id="activity">
   <h2>Activity</h2>
-  <p class="sub">Live-workout presence heartbeat, and steps, sleep, heart rate and cardio sessions sent in from other devices (an iPhone Shortcut, Health Auto Export, a script) with the profile's ingest token.</p>
+  <p class="sub">Live-workout presence heartbeat; steps, sleep, heart rate and cardio sessions sent in from other devices (an iPhone Shortcut, Health Auto Export, a script) with the profile's ingest token; and the profile's Strava connection.</p>
   <div class="eps">
 
 <details class="ep" id="op-postActivity">
@@ -2067,6 +2067,163 @@ main.api-main .lead { color: var(--fg-2); max-width: 58ch; margin: 14px 0 0; fon
   <div class="prow rrow">
     <span class="r-code s4">429</span>
     <span class="p-desc">More than 30 requests in a minute.</span>
+  </div>
+    </div>
+  </div>
+</details>
+
+<details class="ep" id="op-stravaStatus">
+  <summary>
+    <span class="m get">GET</span>
+    <span class="ep-path"><code>/api/strava/status</code></span>
+    <span class="ep-chev" aria-hidden="true"></span>
+    <span class="ep-sum">Whether Strava is available here, and this profile's connection</span>
+  </summary>
+  <div class="ep-body">
+<p><code>available</code> is false unless the instance has <code>STRAVA_CLIENT_ID</code> and <code>STRAVA_CLIENT_SECRET</code>. A connected profile also gets the athlete's name, when it was connected, last synced and what that sync said, and how many sessions came in.</p>
+    <p class="ep-auth"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2.5"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><span>Requires a session: the cookie set at sign-in, or <code>Authorization: Bearer &lt;token&gt;</code> from mobile-app pairing.</span></p>
+
+
+    <p class="ep-h">Responses</p>
+    <div class="ptab">
+  <div class="prow rrow">
+    <span class="r-code s2">200</span>
+    <span class="p-desc">The connection.<span class="r-sig">{ available: boolean, connected: boolean, athlete: string, at: number, syncedAt: number, error: string, count: integer, syncing: boolean }</span></span>
+  </div>
+  <div class="prow rrow">
+    <span class="r-code s4">401</span>
+    <span class="p-desc">No session, expired/revoked session, or a disabled account.<span class="r-sig"><code>{&quot;error&quot;:&quot;not signed in&quot;}</code></span></span>
+  </div>
+    </div>
+  </div>
+</details>
+
+<details class="ep" id="op-stravaConnect">
+  <summary>
+    <span class="m get">GET</span>
+    <span class="ep-path"><code>/api/strava/connect</code></span>
+    <span class="ep-chev" aria-hidden="true"></span>
+    <span class="ep-sum">Start connecting Strava (a redirect)</span>
+  </summary>
+  <div class="ep-body">
+<p>A top-level navigation, not an API call: redirects to Strava's authorization screen, asking to read activities (<code>activity:read_all</code>), with a state bound to this profile for ten minutes. Without a session, or with Strava off, it redirects back to the app's Settings instead.</p>
+    <p class="ep-auth"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2.5"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><span>Requires a session: the cookie set at sign-in, or <code>Authorization: Bearer &lt;token&gt;</code> from mobile-app pairing.</span></p>
+
+
+    <p class="ep-h">Responses</p>
+    <div class="ptab">
+  <div class="prow rrow">
+    <span class="r-code s3">302</span>
+    <span class="p-desc">To Strava</span>
+  </div>
+    </div>
+  </div>
+</details>
+
+<details class="ep" id="op-stravaCallback">
+  <summary>
+    <span class="m get">GET</span>
+    <span class="ep-path"><code>/api/strava/callback</code></span>
+    <span class="ep-chev" aria-hidden="true"></span>
+    <span class="ep-sum">Strava's redirect back (a redirect)</span>
+  </summary>
+  <div class="ep-body">
+<p>Where Strava sends the browser after the authorization screen. The state must be one handed out by <code>connect</code> to the same signed-in profile, and the activity scope must have been granted. Redirects to the app's Settings with <code>?strava=</code> one of <code>connected</code>, <code>denied</code>, <code>scope</code>, <code>expired</code> or <code>failed</code>. On <code>connected</code>, the first year of activities comes in behind the redirect.</p>
+    <p class="ep-auth"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2.5"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><span>Requires a session: the cookie set at sign-in, or <code>Authorization: Bearer &lt;token&gt;</code> from mobile-app pairing.</span></p>
+<p class="ep-h">Query parameters</p><div class="ptab">
+  <div class="prow">
+    <span class="p-name">code</span>
+    <span class="p-type">string</span>
+    <span class="p-desc"></span>
+  </div>
+  <div class="prow">
+    <span class="p-name">state</span>
+    <span class="p-type">string</span>
+    <span class="p-desc"></span>
+  </div>
+  <div class="prow">
+    <span class="p-name">scope</span>
+    <span class="p-type">string</span>
+    <span class="p-desc"></span>
+  </div>
+  <div class="prow">
+    <span class="p-name">error</span>
+    <span class="p-type">string</span>
+    <span class="p-desc"></span>
+  </div>
+</div>
+
+    <p class="ep-h">Responses</p>
+    <div class="ptab">
+  <div class="prow rrow">
+    <span class="r-code s3">302</span>
+    <span class="p-desc">Back to the app's Settings.</span>
+  </div>
+    </div>
+  </div>
+</details>
+
+<details class="ep" id="op-stravaSync">
+  <summary>
+    <span class="m post">POST</span>
+    <span class="ep-path"><code>/api/strava/sync</code></span>
+    <span class="ep-chev" aria-hidden="true"></span>
+    <span class="ep-sum">Sync Strava now</span>
+  </summary>
+  <div class="ep-body">
+<p>Reads the activities since the last sync (two days back, for late uploads and edits; with <code>full: true</code>, the last year) and adds them as sessions: once each, not when deleted in the app, not when another source has the same kind of session starting within two minutes, and never strength training (logged in Pocket Gym itself). A connected profile is also synced on its own, when one of its devices checks for changes and the last sync is older than <code>STRAVA_SYNC_MINUTES</code> (30).</p>
+    <p class="ep-auth"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2.5"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><span>Requires a session: the cookie set at sign-in, or <code>Authorization: Bearer &lt;token&gt;</code> from mobile-app pairing.</span></p>
+
+<p class="ep-h">Request body <span class="p-hint">(JSON)</span></p><div class="ptab">
+  <div class="prow">
+    <span class="p-name">full</span>
+    <span class="p-type">boolean</span>
+    <span class="p-desc"></span>
+  </div>
+</div>
+    <p class="ep-h">Responses</p>
+    <div class="ptab">
+  <div class="prow rrow">
+    <span class="r-code s2">200</span>
+    <span class="p-desc">Synced. <code>sessions</code> counts the new ones; the connection's state is beside it.<span class="r-sig">object</span></span>
+  </div>
+  <div class="prow rrow">
+    <span class="r-code s4">401</span>
+    <span class="p-desc">No session, expired/revoked session, or a disabled account.<span class="r-sig"><code>{&quot;error&quot;:&quot;not signed in&quot;}</code></span></span>
+  </div>
+  <div class="prow rrow">
+    <span class="r-code s4">409</span>
+    <span class="p-desc">Strava is not connected (or not available here).</span>
+  </div>
+  <div class="prow rrow">
+    <span class="r-code s5">502</span>
+    <span class="p-desc">Strava refused or could not be reached; <code>error</code> says which, and the connection's state is beside it.</span>
+  </div>
+    </div>
+  </div>
+</details>
+
+<details class="ep" id="op-stravaDisconnect">
+  <summary>
+    <span class="m delete">DELETE</span>
+    <span class="ep-path"><code>/api/strava</code></span>
+    <span class="ep-chev" aria-hidden="true"></span>
+    <span class="ep-sum">Disconnect Strava</span>
+  </summary>
+  <div class="ep-body">
+<p>Forgets the tokens and asks Strava to revoke the grant. The sessions already imported stay in the profile.</p>
+    <p class="ep-auth"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2.5"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><span>Requires a session: the cookie set at sign-in, or <code>Authorization: Bearer &lt;token&gt;</code> from mobile-app pairing.</span></p>
+
+
+    <p class="ep-h">Responses</p>
+    <div class="ptab">
+  <div class="prow rrow">
+    <span class="r-code s2">200</span>
+    <span class="p-desc">Disconnected (also when it was not connected).<span class="r-sig"><a href="#schema-Ok">Ok</a></span></span>
+  </div>
+  <div class="prow rrow">
+    <span class="r-code s4">401</span>
+    <span class="p-desc">No session, expired/revoked session, or a disabled account.<span class="r-sig"><code>{&quot;error&quot;:&quot;not signed in&quot;}</code></span></span>
   </div>
     </div>
   </div>

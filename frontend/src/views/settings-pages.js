@@ -121,6 +121,7 @@ export const SEARCH = [
   { page: 'data', title: 'Import activity', icon: 'figureRun', tint: 'var(--orange)', kw: 'activity steps sleep run swim ride fit gpx tcx apple health garmin strava coros polar watch' },
   { page: 'data', title: 'Import from Health Connect', icon: 'figureRun', tint: 'var(--orange)', kw: 'health connect google fit samsung health fitbit garmin noise noisefit zepp mi band watch wearable steps sleep heart rate sync', when: c => !c.mobile || c.android },
   { page: 'data', title: 'Send activity from iPhone', icon: 'figureRun', tint: 'var(--orange)', kw: 'iphone apple health apple watch shortcut shortcuts automation health auto export steps sleep heart rate token api', when: c => !!c.user && !c.demo && (!c.mobile || !c.android) },
+  { page: 'data', title: 'Strava', icon: 'figureRun', tint: '#FC4C02', kw: 'strava garmin coros polar suunto wahoo zwift run ride cycling swim hike connect oauth sync', when: c => !!c.user && !c.demo },
   { page: 'data', title: 'Photos & videos', icon: 'image', tint: 'var(--teal)', kw: 'media storage photos videos upload', when: c => c.hasMedia },
   { page: 'data', title: 'Reset everything', icon: 'trash', tint: 'var(--red)', kw: 'delete wipe reset erase' },
   // About & updates

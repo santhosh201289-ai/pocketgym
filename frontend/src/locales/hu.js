@@ -895,6 +895,7 @@ export default {
   'Import activity': 'Aktivitás importálása',
   'Import from Health Connect': 'Importálás a Health Connectből',
   'Send activity from iPhone': 'Aktivitás küldése iPhone-ról',
+  'Strava': 'Strava',
   'Pull your history with a Hevy Pro API key': 'Előzmények letöltése Hevy Pro API-kulccsal',
   'Pull your history with a Hevy Pro API key. The key is only used for this import and is not saved.': 'Előzmények letöltése Hevy Pro API-kulccsal. A kulcs csak ehhez az importhoz kell, nem mentjük el.',
   'Hevy API key': 'Hevy API-kulcs',

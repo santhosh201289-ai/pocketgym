@@ -145,9 +145,9 @@ tags:
     description: Web Push (VAPID) subscriptions, rest-timer and test pushes
   - name: activity
     description: >-
-      Live-workout presence heartbeat, and steps, sleep, heart rate and cardio sessions sent
+      Live-workout presence heartbeat; steps, sleep, heart rate and cardio sessions sent
       in from other devices (an iPhone Shortcut, Health Auto Export, a script) with the
-      profile's ingest token.
+      profile's ingest token; and the profile's Strava connection.
   - name: admin
     description: Admin dashboard. Requires an admin session (`ADMIN_UIDS` or `admin:true`)
   - name: media
@@ -2266,6 +2266,123 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Error' }
+
+  /api/strava/status:
+    get:
+      tags: [activity]
+      operationId: stravaStatus
+      summary: Whether Strava is available here, and this profile's connection
+      description: >-
+        `available` is false unless the instance has `STRAVA_CLIENT_ID` and
+        `STRAVA_CLIENT_SECRET`. A connected profile also gets the athlete's name, when it
+        was connected, last synced and what that sync said, and how many sessions came in.
+      responses:
+        '200':
+          description: The connection.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [available, connected]
+                properties:
+                  available: { type: boolean }
+                  connected: { type: boolean }
+                  athlete: { type: string, nullable: true }
+                  at: { type: number, nullable: true }
+                  syncedAt: { type: number, nullable: true }
+                  error: { type: string, nullable: true }
+                  count: { type: integer }
+                  syncing: { type: boolean }
+              example: { available: true, connected: true, athlete: "Asha K", at: 1792569600000, syncedAt: 1792600000000, error: null, count: 48, syncing: false }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /api/strava/connect:
+    get:
+      tags: [activity]
+      operationId: stravaConnect
+      summary: Start connecting Strava (a redirect)
+      description: >-
+        A top-level navigation, not an API call: redirects to Strava's authorization
+        screen, asking to read activities (`activity:read_all`), with a state bound to
+        this profile for ten minutes. Without a session, or with Strava off, it redirects
+        back to the app's Settings instead.
+      security: [{ cookieAuth: [] }, {}]
+      responses:
+        '302': { description: To Strava, or back to the app. }
+
+  /api/strava/callback:
+    get:
+      tags: [activity]
+      operationId: stravaCallback
+      summary: Strava's redirect back (a redirect)
+      description: >-
+        Where Strava sends the browser after the authorization screen. The state must be
+        one handed out by `connect` to the same signed-in profile, and the activity scope
+        must have been granted. Redirects to the app's Settings with `?strava=` one of
+        `connected`, `denied`, `scope`, `expired` or `failed`. On `connected`, the first
+        year of activities comes in behind the redirect.
+      security: [{ cookieAuth: [] }, {}]
+      parameters:
+        - { name: code, in: query, schema: { type: string } }
+        - { name: state, in: query, schema: { type: string } }
+        - { name: scope, in: query, schema: { type: string } }
+        - { name: error, in: query, schema: { type: string } }
+      responses:
+        '302': { description: Back to the app's Settings. }
+
+  /api/strava/sync:
+    post:
+      tags: [activity]
+      operationId: stravaSync
+      summary: Sync Strava now
+      description: >-
+        Reads the activities since the last sync (two days back, for late uploads and
+        edits; with `full: true`, the last year) and adds them as sessions: once each, not
+        when deleted in the app, not when another source has the same kind of session
+        starting within two minutes, and never strength training (logged in Pocket Gym
+        itself). A connected profile is also synced on its own, when one of its devices
+        checks for changes and the last sync is older than `STRAVA_SYNC_MINUTES` (30).
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                full: { type: boolean }
+      responses:
+        '200':
+          description: Synced. `sessions` counts the new ones; the connection's state is beside it.
+          content:
+            application/json:
+              schema: { type: object }
+              example: { ok: true, sessions: 2, available: true, connected: true, athlete: "Asha K", count: 50 }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '409':
+          description: Strava is not connected (or not available here).
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '502':
+          description: Strava refused or could not be reached; `error` says which, and the connection's state is beside it.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /api/strava:
+    delete:
+      tags: [activity]
+      operationId: stravaDisconnect
+      summary: Disconnect Strava
+      description: >-
+        Forgets the tokens and asks Strava to revoke the grant. The sessions already
+        imported stay in the profile.
+      responses:
+        '200':
+          description: Disconnected (also when it was not connected).
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Ok' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
 
   /api/admin/users:
     get:

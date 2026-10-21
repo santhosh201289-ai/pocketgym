@@ -33,7 +33,8 @@ import { createDeviceLink, findDeviceLink, burnDeviceLink, dropDeviceLinks } fro
 import { createMediaStore, mediaLimits, mediaConfig, MediaError, HASH_RE } from './media.js';
 import { effectiveRoutineId } from './queue.js';
 import { stampPut } from './sync-stamps.js';
-import { makeToken, hashToken, looksLikeToken, parseIngest, applyIngest, IngestError } from './ingest.js';
+import { makeToken, hashToken, looksLikeToken, parseIngest, applyIngest, cleanSession, IngestError } from './ingest.js';
+import { stravaConfig, authorizeUrl, canRead, exchangeCode, freshLink, fetchActivities, deauthorize, toSession, syncFrom, StravaError } from './strava.js';
 import { atomicWrite as durableWrite } from './durable.js';
 import { excusedOn, nudgeFor, nudgeWindowOpen, toneOf } from './nudge.js';
 
@@ -216,6 +217,84 @@ function writeState(uid, cur, next, step = 1) {
   stateCache.delete(uid);
   return next;
 }
+// Days and sessions from outside the app (ingest.js parseIngest, or Strava) merged into the
+// stored document, which is written only when something in it changed. The read, the merge and
+// the write run with nothing awaited between them, so no PUT can land in the middle. A profile
+// with no document yet has never been opened on a device: that first push builds it from the
+// app's defaults, and one made here of nothing but activity would stand in for it (409).
+function ingestInto(user, parsed, now = Date.now()) {
+  const cur = readStateStrict(user.id);
+  if (cur === UNREADABLE) { console.error('state file unreadable for', user.id); return { error: 503 }; }
+  if (!cur) return { error: 409 };
+  const next = structuredClone(cur);
+  const got = applyIngest(next, parsed, now);
+  let rev = cur._rev || 0;
+  if (got.days || got.sessions) {
+    stampPut(cur, next, { stamped: true, overRead: true, now });
+    rev = writeState(user.id, cur, next)._rev;
+  }
+  return { ...got, rev };
+}
+
+/* ---------- Strava (strava.js) ---------- */
+const STRAVA = stravaConfig(process.env, ORIGIN);
+// A connected profile is synced when one of its devices asks for the revision (every half minute
+// while the app is open) and the last sync is older than this, so new activities show up within
+// it without any device having to ask, and nothing is fetched for a profile nobody opens.
+const STRAVA_EVERY_MS = Math.max(60000, +(process.env.STRAVA_SYNC_MINUTES || 30) * 60000 || 30 * 60000);
+const stravaStates = new Map();   // OAuth state -> { uid, exp }, ten minutes, like a pairing code
+const stravaRuns = new Map();     // uid -> the sync in flight, so two never overlap
+function stravaSync(user, { full = false } = {}) {
+  if (!STRAVA.on || !user.strava) return Promise.resolve(null);
+  if (stravaRuns.has(user.id)) return stravaRuns.get(user.id);
+  const run = (async () => {
+    const now = Date.now();
+    try {
+      const fresh = await freshLink(STRAVA, user.strava, fetch, now);
+      // Disconnected while the refresh was out: nothing to put back.
+      if (!user.strava) return null;
+      if (fresh.changed) user.strava = fresh.link;
+      const from = syncFrom(user.strava, now, full);
+      const acts = await fetchActivities(STRAVA, user.strava, from, fetch);
+      if (!user.strava) return null;
+      const sessions = [];
+      let last = Number(user.strava.last) || 0;
+      for (const a of acts) {
+        const x = toSession(a);
+        const s = x && cleanSession(x.raw, 'Strava', x.tzMin);
+        if (!s) continue;
+        sessions.push(s);
+        last = Math.max(last, Math.floor(s.start / 1000));
+      }
+      const got = sessions.length ? ingestInto(user, { days: [], sessions, src: 'Strava' }, now) : { sessions: 0 };
+      // Not yet stored (no document, or one that cannot be read): read again from the same place next time.
+      if (!got.error) user.strava.last = last;
+      user.strava.syncedAt = now;
+      user.strava.error = got.error ? 'waiting for the profile to be opened on a device' : null;
+      if (!got.error && got.sessions) user.strava.count = (Number(user.strava.count) || 0) + got.sessions;
+      saveDb();
+      return { sessions: got.sessions || 0, read: acts.length };
+    } catch (e) {
+      if (!(e instanceof StravaError)) console.error('strava sync', user.id, e);
+      if (user.strava) { user.strava.syncedAt = now; user.strava.error = e instanceof StravaError ? e.message : 'sync failed'; saveDb(); }
+      throw e;
+    } finally { stravaRuns.delete(user.id); }
+  })();
+  stravaRuns.set(user.id, run);
+  return run;
+}
+function stravaDue(user) {
+  if (STRAVA.on && user?.strava && Date.now() - (Number(user.strava.syncedAt) || 0) >= STRAVA_EVERY_MS) stravaSync(user).catch(() => {});
+}
+// Back to the app's own Settings page: relative, so a deployment under a subpath lands in its own copy.
+const STRAVA_BACK = '../../#/settings/data';
+const stravaView = user => {
+  const l = user.strava;
+  if (!STRAVA.on) return { available: false, connected: false };
+  if (!l) return { available: true, connected: false };
+  return { available: true, connected: true, athlete: l.athlete?.name || null, at: l.at || null, syncedAt: l.syncedAt || null, error: l.error || null, count: l.count || 0, syncing: stravaRuns.has(user.id) };
+};
+
 // An entry is an object a reader can dereference, and `records` is every entry of a stored
 // list. PUT /api/data drops the rest on the way in — a null workout, a routine that is a
 // number — and refuses a list that is not an array at all, but a file written before it did
@@ -2198,6 +2277,7 @@ const routes = {
     const state = readStateStrict(user.id);
     if (state === UNREADABLE) { console.error('state file unreadable for', user.id); return json(res, 503, { error: 'state unreadable' }); }
     notePull(user);
+    stravaDue(user);
     json(res, 200, { state: forClient(state), rev: state?._rev || 0 });
   },
   // Just the revision: the client asks this every half minute while it is open and on every
@@ -2209,6 +2289,7 @@ const routes = {
   'GET /api/data/rev': async (req, res) => {
     const user = readSession(req);
     if (!user) return json(res, 401, { error: 'not signed in' });
+    stravaDue(user);
     const doc = readStateCached(user.id);
     json(res, 200, { rev: doc?._rev || 0, ...(doc?._wid ? { wid: doc._wid } : {}) });
   },
@@ -2454,21 +2535,78 @@ const routes = {
     try { parsed = parseIngest(body, { now }); }
     catch (e) { if (e instanceof IngestError) return json(res, 400, { error: e.message }); throw e; }
     if (!parsed.days.length && !parsed.sessions.length) return json(res, 400, { error: 'nothing to import: no day with steps, distance, energy, heart rate or sleep, and no session' });
-    const cur = readStateStrict(user.id);
-    if (cur === UNREADABLE) { console.error('state file unreadable for', user.id); return json(res, 503, { error: 'state unreadable' }); }
-    // A profile with no document yet has never been opened on a device: that first push builds
-    // it from the app's defaults, and one made here of nothing but activity would stand in for it.
-    if (!cur) return json(res, 409, { error: 'open Pocket Gym and sign in once before sending activity' });
-    const next = structuredClone(cur);
-    const got = applyIngest(next, parsed, now);
-    let rev = cur._rev || 0;
-    if (got.days || got.sessions) {
-      stampPut(cur, next, { stamped: true, overRead: true, now });
-      rev = writeState(user.id, cur, next)._rev;
-    }
+    const got = ingestInto(user, parsed, now);
+    if (got.error === 503) return json(res, 503, { error: 'state unreadable' });
+    if (got.error === 409) return json(res, 409, { error: 'open Pocket Gym and sign in once before sending activity' });
     // When it was last used, for Settings: written at most every ten minutes, like notePull.
     if (!user.ingest.used || now - user.ingest.used >= PULL_NOTE_MS) { user.ingest.used = now; saveDb(); }
-    json(res, 200, { ok: true, days: got.days, sessions: got.sessions, rev });
+    json(res, 200, { ok: true, days: got.days, sessions: got.sessions, rev: got.rev });
+  },
+
+  // Strava. `connect` and `callback` are top-level navigations (a link, Strava's redirect back),
+  // so they answer with redirects, never JSON. The OAuth state is bound to the profile that
+  // started it and the callback must come back signed in as that same profile: a Strava account
+  // can never be attached to someone else's profile by sending them a link.
+  'GET /api/strava/status': async (req, res) => {
+    const user = readSession(req);
+    if (!user) return json(res, 401, { error: 'not signed in' });
+    json(res, 200, stravaView(user));
+  },
+  'GET /api/strava/connect': async (req, res) => {
+    const user = readSession(req);
+    // Not signed in in this browser (the Android app opens it in the system browser): to the app,
+    // which asks for a sign-in, and the button there starts over.
+    if (!user || !STRAVA.on) { res.writeHead(302, { Location: STRAVA_BACK, 'Cache-Control': 'no-store' }); return res.end(); }
+    for (const [k, v] of stravaStates) if (v.uid === user.id || v.exp < Date.now()) stravaStates.delete(k);
+    const state = crypto.randomBytes(18).toString('base64url');
+    stravaStates.set(state, { uid: user.id, exp: Date.now() + 10 * 60000 });
+    res.writeHead(302, { Location: authorizeUrl(STRAVA, state), 'Cache-Control': 'no-store' });
+    res.end();
+  },
+  'GET /api/strava/callback': async (req, res) => {
+    const back = (why) => { res.writeHead(302, { Location: STRAVA_BACK + (why ? '?strava=' + why : ''), 'Cache-Control': 'no-store' }); res.end(); };
+    const q = new URL(req.url, 'http://x').searchParams;
+    const st = stravaStates.get(q.get('state') || '');
+    stravaStates.delete(q.get('state') || '');
+    const user = readSession(req);
+    if (!STRAVA.on || !st || st.exp < Date.now() || !user || user.id !== st.uid) return back('expired');
+    if (q.get('error') || !q.get('code')) return back('denied');
+    if (!canRead(q.get('scope'))) return back('scope');
+    let link;
+    try { link = await exchangeCode(STRAVA, q.get('code'), q.get('scope'), fetch); }
+    catch (e) { console.warn('strava connect failed', e.message); return back('failed'); }
+    user.strava = link;
+    saveDb();
+    audit(req, 'strava.connect', { user });
+    // The first year comes in behind the redirect; Settings shows it syncing.
+    stravaSync(user, { full: true }).catch(() => {});
+    back('connected');
+  },
+  'POST /api/strava/sync': async (req, res) => {
+    const user = readSession(req);
+    if (!user) return json(res, 401, { error: 'not signed in' });
+    if (!STRAVA.on || !user.strava) return json(res, 409, { error: 'Strava is not connected' });
+    const body = await readBody(req);
+    try {
+      const got = await stravaSync(user, { full: body.full === true });
+      json(res, 200, { ok: true, sessions: got?.sessions || 0, ...stravaView(user) });
+    } catch (e) {
+      if (e instanceof StravaError) return json(res, 502, { error: e.message, ...stravaView(user) });
+      throw e;
+    }
+  },
+  // Disconnects; the sessions already imported stay in the profile, like any other import.
+  'DELETE /api/strava': async (req, res) => {
+    const user = readSession(req);
+    if (!user) return json(res, 401, { error: 'not signed in' });
+    const link = user.strava;
+    if (link) {
+      delete user.strava;
+      saveDb();
+      audit(req, 'strava.disconnect', { user });
+      if (STRAVA.on) await deauthorize(STRAVA, link, fetch);
+    }
+    json(res, 200, { ok: true });
   },
 
   /* ---------- admin dashboard ---------- */

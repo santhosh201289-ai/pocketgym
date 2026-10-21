@@ -105,8 +105,8 @@ not.
    Immediately*, and pick that shortcut.
 
 The shortcut can run as often as you like. Sending the same numbers again changes nothing, and a
-later run replaces that day's totals. Workouts are easiest from an Apple Health export (above) or,
-later, from Strava.
+later run replaces that day's totals. Workouts are easiest from Strava (below), Health Auto Export, or an Apple Health
+export (above).
 
 **With [Health Auto Export](https://www.healthyapps.dev/) (paid, fully automatic):**
 
@@ -124,6 +124,40 @@ curl -X POST https://gym.example.com/api/ingest/activity \
   -H "Authorization: Bearer pgi_…" -H "Content-Type: application/json" \
   -d '{"date":"2026-10-21","steps":8123,"distanceKm":5.2,"activeKcal":410,"restingHr":55,"sleepHours":7.2}'
 ```
+
+## Strava
+
+Connect a Strava account to bring in its runs, rides, walks, swims and hikes. That includes
+whatever Garmin, COROS, Polar, Suunto, Wahoo or Zwift upload to Strava.
+
+- **Connecting:** go to Settings → Data & backup → **Strava** and choose **Connect with Strava**.
+  Approve on Strava's page and leave "View data about your activities" ticked.
+- **First sync:** the last year of activities comes in. After that, new ones arrive within about
+  half an hour while any of your devices has Pocket Gym open. **Sync Strava now** fetches them at
+  once.
+- **Duplicates and deletions:** each activity comes in once. One you delete in Pocket Gym stays
+  deleted. One already there from another source is skipped, if it is the same kind and starts
+  within two minutes (for example, the same run through Health Connect).
+- **Strength sessions:** Weight Training and Crossfit are skipped, since strength is logged in
+  Pocket Gym itself.
+- **Disconnecting:** this forgets the connection and asks Strava to revoke it. What was imported
+  stays.
+
+**For the server admin:** Strava is off until the instance has a Strava API application.
+
+1. Create one at <https://www.strava.com/settings/api>.
+2. Set **Authorization Callback Domain** to your server's host, for example `gym.example.com`
+   with no `https://`.
+3. Put its Client ID and Client Secret in `.env`, then run `docker compose up -d`:
+   ```
+   STRAVA_CLIENT_ID=12345
+   STRAVA_CLIENT_SECRET=…
+   ```
+
+The server, not the browser, fetches from Strava. Each profile's Strava tokens are kept in
+`data/db.json` (mode 0600), so keep that file as private as the rest of `data/`. A new Strava
+application can connect only its own owner's account at first. To let more athletes connect,
+ask Strava to raise the limit from that same page.
 
 ## Sharing a plan
 

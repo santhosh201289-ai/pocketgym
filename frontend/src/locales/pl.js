@@ -655,6 +655,7 @@ export default {
   'Import activity': 'Importuj aktywność',
   'Import from Health Connect': 'Importuj z Health Connect',
   'Send activity from iPhone': 'Wysyłaj aktywność z iPhone’a',
+  'Strava': 'Strava',
   'Pull your history with a Hevy Pro API key': 'Pobierz historię kluczem API Hevy Pro',
   'Pull your history with a Hevy Pro API key. The key is only used for this import and is not saved.': 'Pobierz historię kluczem API Hevy Pro. Klucz służy tylko do tego importu i nie jest zapisywany.',
   'Hevy API key': 'Klucz API Hevy',

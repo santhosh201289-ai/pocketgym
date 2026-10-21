@@ -45,6 +45,7 @@ import { usePasskeys, PasskeysRow, DeviceLinkRow, openDeviceLinkRedeem } from '.
 import { Section, Row, SelectRow, Switch, Segmented, Button, TextField, SearchField } from '../components/ui.jsx'
 import { importActivityFiles } from '../components/Activity.jsx'
 import { IngestCard } from '../components/IngestCard.jsx'
+import { StravaCard } from '../components/StravaCard.jsx'
 import { PAGES, ROOT_GROUPS, pageVisible, searchSettings, pageTrail } from './settings-pages.js'
 
 /* Settings (v1.3.11). The root is one screen: an account card, eleven rows that each open a page
@@ -800,6 +801,7 @@ export default function Settings({ page = null, find = null, via = null }) {
       {/* A profile on a server only: the Shortcut sends to it. Not on the Android app, which reads
           Health Connect itself. */}
       {user && !DEMO && !(MOBILE && android) && <IngestCard />}
+      {user && !DEMO && <StravaCard />}
       <Section title={t('Bring data in')}>
         <Row icon="download" iconTint="var(--teal)" title={t('Import backup')} accessory="chevron" onClick={() => fileRef.current.click()} />
         <Row icon="download" iconTint="var(--teal)" title={t('Import from another app')}
