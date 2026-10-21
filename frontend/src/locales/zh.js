@@ -656,6 +656,7 @@ export default {
   'Import from Health Connect': '从 Health Connect 导入',
   'Send activity from iPhone': '从 iPhone 发送活动',
   'Strava': 'Strava',
+  'Groups & coaching': '群组与教练',
   'Activity and sleep': '活动与睡眠',
   'Daily steps, sleep and resting heart rate, and your runs, rides, walks and swims from the same window.': '同一期间的每日步数、睡眠和静息心率,以及你的跑步、骑行、步行和游泳记录。',
   'Pull your history with a Hevy Pro API key': '使用 Hevy Pro API 密钥拉取训练记录',

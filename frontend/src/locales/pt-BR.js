@@ -200,6 +200,7 @@ export const PT_BR_OVERRIDES = {
   'Import from Health Connect': 'Importar do Health Connect',
   'Send activity from iPhone': 'Enviar atividade do iPhone',
   'Strava': 'Strava',
+  'Groups & coaching': 'Grupos e treinamento',
   'Activity and sleep': 'Atividade e sono',
   'Daily steps, sleep and resting heart rate, and your runs, rides, walks and swims from the same window.': 'Passos diários, sono e frequência cardíaca em repouso, e suas corridas, pedaladas, caminhadas e natações do mesmo período.',
   'Pull your history with a Hevy Pro API key': 'Traga seu histórico com uma chave de API do Hevy Pro',

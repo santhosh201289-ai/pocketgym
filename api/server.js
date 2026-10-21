@@ -34,6 +34,10 @@ import { createMediaStore, mediaLimits, mediaConfig, MediaError, HASH_RE } from 
 import { effectiveRoutineId } from './queue.js';
 import { stampPut } from './sync-stamps.js';
 import { makeToken, hashToken, looksLikeToken, parseIngest, applyIngest, cleanSession, IngestError } from './ingest.js';
+import {
+  GroupError, isCoach as coachRole, cleanName as groupName, cleanPlan, cleanSchedule, newId, groupOf, memberOf, coachedGroup,
+  groupsView, findPeople, dropUser as dropFromGroups, pruneAssignments, memberSummary, MAX_GROUPS, MAX_MEMBERS, MAX_PENDING, NOTE_MAX as GROUP_NOTE_MAX
+} from './groups.js';
 import { stravaConfig, authorizeUrl, canRead, exchangeCode, freshLink, fetchActivities, deauthorize, toSession, syncFrom, StravaError } from './strava.js';
 import { atomicWrite as durableWrite } from './durable.js';
 import { excusedOn, nudgeFor, nudgeWindowOpen, toneOf } from './nudge.js';
@@ -147,8 +151,11 @@ db.users = db.users || [];
 db.creds = db.creds || [];
 db.subs = db.subs || [];
 db.invites = db.invites || [];
-db.deviceLinks = db.deviceLinks || [];   // unused one-time device links, hashed (device-link.js)
+db.deviceLinks = db.deviceLinks || [];
+db.groups = db.groups || [];             // groups.js: coaches, their members
+db.assignments = db.assignments || [];   // groups.js: routines a coach sent, until answered   // unused one-time device links, hashed (device-link.js)
 const isAdmin = user => !!user && (user.admin === true || ADMIN_UIDS.includes(user.id));
+const isCoach = user => coachRole(user, isAdmin);
 // 0600: db.json holds passkey credential material. It used to be covered by a blanket 0700 on
 // the whole directory; now that the directory stays traversable, the file carries its own mode.
 // Once the new version is on disk, a second copy of it goes to db.json.bak, the same durable
@@ -234,6 +241,21 @@ function ingestInto(user, parsed, now = Date.now()) {
     rev = writeState(user.id, cur, next)._rev;
   }
   return { ...got, rev };
+}
+
+// The shape of every state-changing groups route: signed in, a JSON body, the change (which
+// throws GroupError for the caller's mistakes and may name an audit event), saved, and the
+// caller's groups back.
+async function groupAction(req, res, change) {
+  const user = readSession(req);
+  if (!user) return json(res, 401, { error: 'not signed in' });
+  const body = await readBody(req);
+  let ev;
+  try { ev = change(user, body && typeof body === 'object' ? body : {}); }
+  catch (e) { if (e instanceof GroupError) return json(res, e.status, { error: e.message }); throw e; }
+  saveDb();
+  if (ev) audit(req, ev, { user });
+  json(res, 200, groupsView(db, user, isCoach(user)));
 }
 
 /* ---------- Strava (strava.js) ---------- */
@@ -1194,7 +1216,7 @@ function loginTarget(body) {
 }
 const acctKey = u => 'acct:' + u.id;
 const passkeyCount = u => db.creds.filter(c => c.userId === u.id).length;
-const publicUser = u => ({ id: u.id, name: u.name, admin: isAdmin(u) });
+const publicUser = u => ({ id: u.id, name: u.name, admin: isAdmin(u), ...(isCoach(u) ? { coach: true } : {}) });
 const POLICY_ERRORS = {
   'too-short': `the password needs at least ${MIN_LENGTH} characters`,
   'too-long': `the password can have at most ${MAX_LENGTH} characters`,
@@ -2057,7 +2079,7 @@ const routes = {
     if (!s) return json(res, 401, { error: 'not signed in' });
     const { user } = s;
     const renew = s.bearer && s.exp - Date.now() < SESSION_DAYS * 86400000 / 2;
-    json(res, 200, { user: { id: user.id, name: user.name, admin: isAdmin(user) }, ...(renew ? { token: makeSession(user) } : {}) });
+    json(res, 200, { user: { id: user.id, name: user.name, admin: isAdmin(user), ...(isCoach(user) ? { coach: true } : {}) }, ...(renew ? { token: makeSession(user) } : {}) });
   },
 
   'POST /api/register/options': async (req, res) => {
@@ -2609,6 +2631,122 @@ const routes = {
     json(res, 200, { ok: true });
   },
 
+  /* ---------- groups: a coach, their members, the routines they send (groups.js) ---------- */
+  'GET /api/groups': async (req, res) => {
+    const user = readSession(req);
+    if (!user) return json(res, 401, { error: 'not signed in' });
+    json(res, 200, groupsView(db, user, isCoach(user)));
+  },
+  // Every POST below takes JSON and answers with the caller's groups as GET does, so the screen
+  // shows what the server now holds without asking again.
+  'POST /api/groups': async (req, res) => groupAction(req, res, (user, body) => {
+    if (!isCoach(user)) throw new GroupError(403, 'only a coach can make a group: ask an admin');
+    if (db.groups.filter(g => g.coach === user.id).length >= MAX_GROUPS) throw new GroupError(400, `at most ${MAX_GROUPS} groups`);
+    db.groups.push({ id: newId(crypto), name: groupName(body.name), coach: user.id, at: Date.now(), members: [] });
+    return 'groups.create';
+  }),
+  'POST /api/groups/rename': async (req, res) => groupAction(req, res, (user, body) => {
+    coachedGroup(db, body.group, user).name = groupName(body.name);
+  }),
+  'POST /api/groups/delete': async (req, res) => groupAction(req, res, (user, body) => {
+    const g = coachedGroup(db, body.group, user);
+    db.groups = db.groups.filter(x => x !== g);
+    pruneAssignments(db);
+    return 'groups.delete';
+  }),
+  'GET /api/groups/people': async (req, res) => {
+    const user = readSession(req);
+    if (!user) return json(res, 401, { error: 'not signed in' });
+    if (!isCoach(user)) return json(res, 403, { error: 'only a coach can look people up' });
+    const q = new URL(req.url, 'http://x').searchParams;
+    const g = groupOf(db, q.get('group'));
+    json(res, 200, { people: findPeople(db, user, q.get('q'), g && g.coach === user.id ? g : null) });
+  },
+  'POST /api/groups/members/add': async (req, res) => groupAction(req, res, (user, body) => {
+    const g = coachedGroup(db, body.group, user);
+    const u = db.users.find(x => x.id === body.uid && !x.disabled);
+    if (!u || u.id === user.id) throw new GroupError(404, 'no such person');
+    if (memberOf(g, u.id)) return;
+    if (g.members.length >= MAX_MEMBERS) throw new GroupError(400, `at most ${MAX_MEMBERS} people in a group`);
+    g.members.push({ uid: u.id, status: 'invited', at: Date.now() });
+    return 'groups.invite';
+  }),
+  'POST /api/groups/members/remove': async (req, res) => groupAction(req, res, (user, body) => {
+    const g = coachedGroup(db, body.group, user);
+    g.members = g.members.filter(m => m.uid !== body.uid);
+    db.assignments = db.assignments.filter(a => !(a.group === g.id && a.to === body.uid && a.status === 'pending'));
+  }),
+  // The member's side: accept or turn down an invitation, or leave.
+  'POST /api/groups/respond': async (req, res) => groupAction(req, res, (user, body) => {
+    const g = groupOf(db, body.group);
+    const m = memberOf(g, user.id);
+    if (!m) throw new GroupError(404, 'no such group');
+    if (body.accept === true && m.status === 'invited') { m.status = 'active'; m.at = Date.now(); return 'groups.join'; }
+    if (body.accept === false) {
+      g.members = g.members.filter(x => x.uid !== user.id);
+      db.assignments = db.assignments.filter(a => !(a.group === g.id && a.to === user.id && a.status === 'pending'));
+      return 'groups.leave';
+    }
+  }),
+  // A coach reads an active member: training, activity, body weight (groups.js memberSummary).
+  'GET /api/groups/member': async (req, res) => {
+    const user = readSession(req);
+    if (!user) return json(res, 401, { error: 'not signed in' });
+    const q = new URL(req.url, 'http://x').searchParams;
+    const g = groupOf(db, q.get('group'));
+    const m = g && g.coach === user.id ? memberOf(g, q.get('uid')) : null;
+    if (!m || m.status !== 'active') return json(res, 404, { error: 'not an active member of your group' });
+    const S = readStateStrict(m.uid);
+    if (S === UNREADABLE) return json(res, 503, { error: 'state unreadable' });
+    json(res, 200, { uid: m.uid, name: db.users.find(u => u.id === m.uid)?.name || '?', since: m.at, ...memberSummary(S) });
+  },
+  // A routine for some or all active members, to train on weekdays (every week) or dates (once).
+  'POST /api/groups/assign': async (req, res) => groupAction(req, res, (user, body) => {
+    const g = coachedGroup(db, body.group, user);
+    const plan = cleanPlan(body.plan);
+    const { weekly, dates } = cleanSchedule(body, new Date().toISOString().slice(0, 10));
+    const active = g.members.filter(m => m.status === 'active').map(m => m.uid);
+    const to = body.to === 'all' ? active : [...new Set(Array.isArray(body.to) ? body.to : [])].filter(uid => active.includes(uid));
+    if (!to.length) throw new GroupError(400, 'nobody to send it to: pick active members');
+    for (const uid of to) {
+      if (db.assignments.filter(a => a.to === uid && a.status === 'pending').length >= MAX_PENDING) throw new GroupError(400, 'one of them already has too many waiting');
+    }
+    const note = String(body.note || '').trim().slice(0, GROUP_NOTE_MAX);
+    const now = Date.now();
+    for (const uid of to) db.assignments.push({ id: newId(crypto), group: g.id, coach: user.id, to: uid, at: now, note, plan, weekly, dates, status: 'pending' });
+    pruneAssignments(db, now);
+    return 'groups.assign';
+  }),
+  // What a coach sent in a group, newest first, and how each was answered.
+  'GET /api/groups/sent': async (req, res) => {
+    const user = readSession(req);
+    if (!user) return json(res, 401, { error: 'not signed in' });
+    const g = groupOf(db, new URL(req.url, 'http://x').searchParams.get('group'));
+    if (!g || g.coach !== user.id) return json(res, 404, { error: 'no such group' });
+    const name = uid => db.users.find(u => u.id === uid)?.name || '?';
+    json(res, 200, { sent: db.assignments.filter(a => a.group === g.id).sort((a, b) => b.at - a.at).slice(0, 100)
+      .map(a => ({ id: a.id, to: a.to, toName: name(a.to), at: a.at, routine: a.plan.routines[0]?.name || '', weekly: a.weekly, dates: a.dates, status: a.status, answered: a.answered || null })) });
+  },
+  // The member's inbox: invitations and routines waiting for an answer.
+  'GET /api/groups/inbox': async (req, res) => {
+    const user = readSession(req);
+    if (!user) return json(res, 401, { error: 'not signed in' });
+    const name = uid => db.users.find(u => u.id === uid)?.name || '?';
+    const invites = db.groups.filter(g => memberOf(g, user.id)?.status === 'invited').map(g => ({ group: g.id, name: g.name, coach: name(g.coach), at: memberOf(g, user.id).at }));
+    const assignments = db.assignments.filter(a => a.to === user.id && a.status === 'pending').sort((a, b) => a.at - b.at)
+      .map(a => ({ id: a.id, group: a.group, groupName: groupOf(db, a.group)?.name || '', coach: name(a.coach), coachId: a.coach, at: a.at, note: a.note, plan: a.plan, weekly: a.weekly, dates: a.dates }));
+    json(res, 200, { invites, assignments });
+  },
+  // The member's answer. Accepting is recorded only once their app has applied the routine
+  // (lib/group-assign.js) and pushed it: the server never writes the member's plan itself.
+  'POST /api/groups/inbox/answer': async (req, res) => groupAction(req, res, (user, body) => {
+    const a = db.assignments.find(x => x.id === body.id && x.to === user.id);
+    if (!a) throw new GroupError(404, 'no such assignment');
+    if (a.status !== 'pending') return;
+    a.status = body.accept === true ? 'accepted' : 'declined';
+    a.answered = Date.now();
+  }),
+
   /* ---------- admin dashboard ---------- */
   // One row per user, cheap enough for a personal instance (reads each state file once).
   'GET /api/admin/users': async (req, res) => {
@@ -2619,7 +2757,7 @@ const routes = {
       const last = workouts[workouts.length - 1];
       return {
         id: u.id, name: u.name, created: u.created || null,
-        disabled: !!u.disabled, admin: isAdmin(u), invitedBy: u.invitedBy || null,
+        disabled: !!u.disabled, admin: isAdmin(u), coach: isCoach(u), invitedBy: u.invitedBy || null,
         workouts: workouts.length,
         lastWorkout: last ? last.d : null,
         lastSync: lastSyncOf(u, S),
@@ -2642,7 +2780,7 @@ const routes = {
     const S = readState(u.id) || {};
     json(res, 200, {
       user: {
-        id: u.id, name: u.name, created: u.created || null, disabled: !!u.disabled, admin: isAdmin(u), invitedBy: u.invitedBy || null,
+        id: u.id, name: u.name, created: u.created || null, disabled: !!u.disabled, admin: isAdmin(u), coach: isCoach(u), invitedBy: u.invitedBy || null,
         // Only on an instance with password sign-in: whether they have one, and until when an
         // unused reset code is good.
         ...(PASSWORD_LOGIN ? { password: hasPassword(u), email: u.email || null, resetUntil: u.pwReset?.exp > Date.now() ? u.pwReset.exp : null } : {})
@@ -2655,6 +2793,19 @@ const routes = {
       // photos and videos are the owner's own: the admin view gets no refs to them.
       workouts: records(S.workouts).reverse().map(({ media, ...w }) => w)
     });
+  },
+
+  // Makes a profile a coach (groups.js), or takes that back: their groups stay, but they can make
+  // no new one. An admin is always a coach.
+  'POST /api/admin/user/coach': async (req, res) => {
+    const admin = requireAdmin(req, res); if (!admin) return;
+    const body = await readBody(req);
+    const u = db.users.find(x => x.id === body.id);
+    if (!u) return json(res, 404, { error: 'no such user' });
+    if (body.coach === true) u.coach = true; else delete u.coach;
+    saveDb();
+    audit(req, u.coach ? 'admin.user.coach' : 'admin.user.uncoach', { user: admin, target: u });
+    json(res, 200, { ok: true, id: u.id, coach: isCoach(u) });
   },
 
   'POST /api/admin/user/disable': async (req, res) => {
@@ -2690,6 +2841,7 @@ const routes = {
     db.creds = (db.creds || []).filter(c => c.userId !== u.id);
     db.subs = (db.subs || []).filter(x => x.userId !== u.id);
     dropDeviceLinks(db, u.id);
+    dropFromGroups(db, u.id);
     presence.delete(u.id);
     // The training history and any Coach credential of theirs, both outside db.json.
     try { fs.unlinkSync(stateFile(u.id)); } catch { /* already gone */ }

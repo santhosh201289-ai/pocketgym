@@ -656,6 +656,7 @@ export default {
   'Import from Health Connect': 'Importar do Health Connect',
   'Send activity from iPhone': 'Enviar atividade do iPhone',
   'Strava': 'Strava',
+  'Groups & coaching': 'Grupos e treino',
   'Activity and sleep': 'Atividade e sono',
   'Daily steps, sleep and resting heart rate, and your runs, rides, walks and swims from the same window.': 'Passos diários, sono e frequência cardíaca em repouso, e as tuas corridas, voltas de bicicleta, caminhadas e natações do mesmo período.',
   'Pull your history with a Hevy Pro API key': 'Traz o historial com uma chave API Hevy Pro',

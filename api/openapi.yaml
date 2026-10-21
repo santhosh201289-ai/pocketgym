@@ -148,6 +148,12 @@ tags:
       Live-workout presence heartbeat; steps, sleep, heart rate and cardio sessions sent
       in from other devices (an iPhone Shortcut, Health Auto Export, a script) with the
       profile's ingest token; and the profile's Strava connection.
+  - name: groups
+    description: >-
+      Coaching groups. A coach (an admin, or a profile an admin made one) adds people by
+      name; each must accept before the coach sees anything of them. The coach reads an
+      active member's training, activity and body weight, and sends routines that wait in
+      the member's inbox until accepted. Either side can end it at any time.
   - name: admin
     description: Admin dashboard. Requires an admin session (`ADMIN_UIDS` or `admin:true`)
   - name: media
@@ -2384,6 +2390,399 @@ paths:
               schema: { $ref: '#/components/schemas/Ok' }
         '401': { $ref: '#/components/responses/Unauthorized' }
 
+  /api/groups:
+    get:
+      tags: [groups]
+      operationId: groupsList
+      summary: "The groups the caller coaches and is in"
+      description: >-
+        `coach` says whether the caller may make groups. `coaching` lists their groups with
+        members (name and status `invited` or `active`); `memberOf` the groups they are in or
+        invited to, with the coach's name; `pending` counts routines waiting in their inbox.
+      responses:
+        '200':
+          description: The caller's groups, as GET /api/groups answers.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/GroupsView' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404':
+          description: No such group, person or assignment for this caller.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+    post:
+      tags: [groups]
+      operationId: groupsCreate
+      summary: "Make a group (coaches only)"
+      description: >-
+        403 for anyone who is not a coach. At most 20 groups per coach.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string, maxLength: 60 }
+      responses:
+        '200':
+          description: The caller's groups, as GET /api/groups answers.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/GroupsView' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '400':
+          description: A name, plan or schedule that is not one, or a limit reached.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '404':
+          description: No such group, person or assignment for this caller.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /api/groups/rename:
+    post:
+      tags: [groups]
+      operationId: groupsRename
+      summary: "Rename a group"
+      description: >-
+        The coach's own groups only.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                group: { type: string }
+                name: { type: string, maxLength: 60 }
+      responses:
+        '200':
+          description: The caller's groups, as GET /api/groups answers.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/GroupsView' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '400':
+          description: A name, plan or schedule that is not one, or a limit reached.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '404':
+          description: No such group, person or assignment for this caller.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /api/groups/delete:
+    post:
+      tags: [groups]
+      operationId: groupsDelete
+      summary: "Delete a group"
+      description: >-
+        Ends it for every member and drops what is still waiting in their inboxes. What members
+        already accepted stays in their plans.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                group: { type: string }
+      responses:
+        '200':
+          description: The caller's groups, as GET /api/groups answers.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/GroupsView' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '400':
+          description: A name, plan or schedule that is not one, or a limit reached.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '404':
+          description: No such group, person or assignment for this caller.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /api/groups/people:
+    get:
+      tags: [groups]
+      operationId: groupsPeople
+      summary: "Find people to add (coaches only)"
+      description: >-
+        Other enabled profiles whose name contains `q` (two letters at least), up to 20, with
+        their status in `group` when given.
+      parameters:
+        - { name: q, in: query, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Matches.
+          content:
+            application/json:
+              schema: { type: object }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404':
+          description: No such group, person or assignment for this caller.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /api/groups/members/add:
+    post:
+      tags: [groups]
+      operationId: groupsMemberAdd
+      summary: "Invite someone to a group"
+      description: >-
+        They are `invited` until they accept; the coach sees nothing of them until then.
+        At most 200 people per group.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                group: { type: string }
+                uid: { type: string }
+      responses:
+        '200':
+          description: The caller's groups, as GET /api/groups answers.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/GroupsView' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '400':
+          description: A name, plan or schedule that is not one, or a limit reached.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '404':
+          description: No such group, person or assignment for this caller.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /api/groups/members/remove:
+    post:
+      tags: [groups]
+      operationId: groupsMemberRemove
+      summary: "Take someone out of a group"
+      description: >-
+        Drops what is still waiting in their inbox from this group.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                group: { type: string }
+                uid: { type: string }
+      responses:
+        '200':
+          description: The caller's groups, as GET /api/groups answers.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/GroupsView' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '400':
+          description: A name, plan or schedule that is not one, or a limit reached.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '404':
+          description: No such group, person or assignment for this caller.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /api/groups/respond:
+    post:
+      tags: [groups]
+      operationId: groupsRespond
+      summary: "Accept an invitation, turn it down, or leave"
+      description: >-
+        `accept: true` on an invitation makes the caller an active member; `accept: false`
+        turns it down, or leaves a group they are in.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                group: { type: string }
+                accept: { type: boolean }
+      responses:
+        '200':
+          description: The caller's groups, as GET /api/groups answers.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/GroupsView' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '400':
+          description: A name, plan or schedule that is not one, or a limit reached.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '404':
+          description: No such group, person or assignment for this caller.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /api/groups/member:
+    get:
+      tags: [groups]
+      operationId: groupsMember
+      summary: "A member as their coach sees them"
+      description: >-
+        Only an active member of the caller's own group. The last twelve weeks of workouts
+        (each set's weight, reps and whether it was done), sessions per week, their routines
+        and weekly plan, thirty days of activity and cardio, six months of weigh-ins and the
+        goal weight. Never notes, photos, settings or credentials.
+      parameters:
+        - { name: group, in: query, required: true, schema: { type: string } }
+        - { name: uid, in: query, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: The member's summary.
+          content:
+            application/json:
+              schema: { type: object }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404':
+          description: No such group, person or assignment for this caller.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /api/groups/assign:
+    post:
+      tags: [groups]
+      operationId: groupsAssign
+      summary: "Send a routine to members"
+      description: >-
+        `plan` is a shared-plan bundle with one routine (the app's plan file format), `weekly`
+        the weekdays to train it every week (0 = Sunday), `dates` the days to train it once
+        (today or later), `to` a list of active members or `all`. It waits in each member's
+        inbox; nothing in their plan changes until they accept it in their app.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                group: { type: string }
+                to: { oneOf: [{ type: array, items: { type: string } }, { type: string, enum: [all] }] }
+                plan: { type: object }
+                weekly: { type: array, items: { type: integer } }
+                dates: { type: array, items: { type: string } }
+                note: { type: string, maxLength: 500 }
+      responses:
+        '200':
+          description: The caller's groups, as GET /api/groups answers.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/GroupsView' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '400':
+          description: A name, plan or schedule that is not one, or a limit reached.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '404':
+          description: No such group, person or assignment for this caller.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /api/groups/sent:
+    get:
+      tags: [groups]
+      operationId: groupsSent
+      summary: "What a coach sent in a group"
+      description: >-
+        Newest first, up to 100, with each member's answer.
+      parameters:
+        - { name: group, in: query, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: The assignments.
+          content:
+            application/json:
+              schema: { type: object }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404':
+          description: No such group, person or assignment for this caller.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /api/groups/inbox:
+    get:
+      tags: [groups]
+      operationId: groupsInbox
+      summary: "Invitations and routines waiting for an answer"
+      description: >-
+        Invitations to groups, and routines a coach sent that wait for an answer, each with its
+        plan bundle and schedule.
+      responses:
+        '200':
+          description: The inbox.
+          content:
+            application/json:
+              schema: { type: object }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404':
+          description: No such group, person or assignment for this caller.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /api/groups/inbox/answer:
+    post:
+      tags: [groups]
+      operationId: groupsAnswer
+      summary: "Accept or decline a routine"
+      description: >-
+        Records the answer. The app applies an accepted routine to the profile itself, as it
+        imports a plan file, and syncs it; the server never writes the member's plan.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id: { type: string }
+                accept: { type: boolean }
+      responses:
+        '200':
+          description: The caller's groups, as GET /api/groups answers.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/GroupsView' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '400':
+          description: A name, plan or schedule that is not one, or a limit reached.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '404':
+          description: No such group, person or assignment for this caller.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
   /api/admin/users:
     get:
       tags: [admin]
@@ -2444,6 +2843,38 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/Error' }
               example: { error: "no such user" }
+
+  /api/admin/user/coach:
+    post:
+      tags: [admin]
+      operationId: adminUserCoach
+      summary: 'Admin: make a profile a coach, or take it back'
+      description: >-
+        A coach can make groups (see Groups). Taking it back leaves their groups as they are
+        but lets them make no new one. An admin is always a coach. Admin only.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id: { type: string }
+                coach: { type: boolean }
+      responses:
+        '200':
+          description: Done.
+          content:
+            application/json:
+              schema: { type: object }
+              example: { ok: true, id: "u_123", coach: true }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404':
+          description: No such user.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
 
   /api/admin/user/disable:
     post:
@@ -3377,6 +3808,13 @@ components:
           example: { error: "that code is wrong, used or expired", code: "link-invalid" }
 
   schemas:
+    GroupsView:
+      type: object
+      properties:
+        coach: { type: boolean }
+        coaching: { type: array, items: { type: object } }
+        memberOf: { type: array, items: { type: object } }
+        pending: { type: integer }
     Error:
       type: object
       required: [error]

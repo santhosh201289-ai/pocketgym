@@ -896,6 +896,7 @@ export default {
   'Import from Health Connect': 'Importálás a Health Connectből',
   'Send activity from iPhone': 'Aktivitás küldése iPhone-ról',
   'Strava': 'Strava',
+  'Groups & coaching': 'Csoportok és edzés',
   'Activity and sleep': 'Aktivitás és alvás',
   'Daily steps, sleep and resting heart rate, and your runs, rides, walks and swims from the same window.': 'Napi lépésszám, alvás és nyugalmi pulzus, valamint a futásaid, kerékpározásaid, sétáid és úszásaid ugyanebből az időszakból.',
   'Pull your history with a Hevy Pro API key': 'Előzmények letöltése Hevy Pro API-kulccsal',

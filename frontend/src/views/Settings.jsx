@@ -866,6 +866,7 @@ export default function Settings({ page = null, find = null, via = null }) {
       {user && !DEMO && <ServerSyncSection>
         {MOBILE && <>
           {user.admin && <Row icon="crown" iconTint="var(--indigo)" title={t('Admin dashboard')} accessory="chevron" onClick={() => nav('/admin')} />}
+          <Row icon="person" iconTint="var(--green)" title={t('Groups & coaching')} subtitle={user.coach ? t('Your groups, members and the routines you send') : t('Your coach, invitations and routines sent to you')} accessory="chevron" onClick={() => nav('/groups')} />
           <AccountIdRow id={user.id} />
           <Row icon="signOut" iconTint="var(--red)" title={t('Disconnect')} danger onClick={disconnect} />
         </>}
@@ -886,6 +887,7 @@ export default function Settings({ page = null, find = null, via = null }) {
             onClick={() => window.open(REPO, '_blank', 'noopener')} />
         </> : user ? <>
           {user.admin && <Row icon="crown" iconTint="var(--indigo)" title={t('Admin dashboard')} accessory="chevron" onClick={() => nav('/admin')} />}
+          <Row icon="person" iconTint="var(--green)" title={t('Groups & coaching')} subtitle={user.coach ? t('Your groups, members and the routines you send') : t('Your coach, invitations and routines sent to you')} accessory="chevron" onClick={() => nav('/groups')} />
           <PasskeysRow state={passkeys.st} changed={credsChanged} />
           <DeviceLinkRow state={passkeys.st} />
           <Row icon="qr" iconTint="var(--blue)" title={t('Pair the mobile app')} subtitle={t('Connect the Pocket Gym app on your phone to this account.')} accessory="chevron"

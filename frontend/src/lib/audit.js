@@ -24,6 +24,18 @@ const LABELS = {
   // Device pairing (Settings → "Pair the mobile app"): the code is minted in a signed-in browser
   // tab and redeemed by the app, so "ok" is the phone coming online, not a sign-in.
   'auth.pair.create': 'Created a pairing code',
+  'ingest.token': 'Made a token for sending activity in',
+  'ingest.revoke': 'Turned off sending activity in',
+  'strava.connect': 'Connected Strava',
+  'strava.disconnect': 'Disconnected Strava',
+  'groups.create': 'Made a group',
+  'groups.delete': 'Deleted a group',
+  'groups.invite': 'Invited someone to a group',
+  'groups.join': 'Joined a group',
+  'groups.leave': 'Left a group',
+  'groups.assign': 'Sent a routine to a group',
+  'admin.user.coach': 'Made a user a coach',
+  'admin.user.uncoach': 'Took a user\'s coach role back',
   'auth.pair.ok': 'Paired a phone',
   'auth.pair.fail': 'Pairing failed',
   // Password sign-in (#118), where the instance offers it.
