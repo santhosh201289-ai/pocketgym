@@ -219,7 +219,7 @@ main.api-main .lead { color: var(--fg-2); max-width: 58ch; margin: 14px 0 0; fon
   <a class="side-link" href="#passkeys"><b>Passkeys</b><span>More passkeys &amp; device links</span></a>
   <a class="side-link" href="#data"><b>Data</b><span>State sync</span></a>
   <a class="side-link" href="#push"><b>Push</b><span>Notifications &amp; rest timer</span></a>
-  <a class="side-link" href="#activity"><b>Activity</b><span>Live presence</span></a>
+  <a class="side-link" href="#activity"><b>Activity</b><span>Live presence &amp; activity from other devices</span></a>
   <a class="side-link" href="#media"><b>Media</b><span>Photos &amp; videos of your exercises &amp; workouts</span></a>
   <a class="side-link" href="#coach"><b>AI Coach</b><span>Plans, reviews, debriefs</span></a>
   <a class="side-link" href="#admin"><b>Admin</b><span>Users, invites, audit log, Coach</span></a>
@@ -245,7 +245,7 @@ main.api-main .lead { color: var(--fg-2); max-width: 58ch; margin: 14px 0 0; fon
   <p class="api-facts">
     <span>OpenAPI 3.1.0</span>
     <span>Pocket Gym v1.4.0</span>
-    <span>69 endpoints</span>
+    <span>73 endpoints</span>
     <span>AGPL-3.0-or-later</span>
   </p>
 
@@ -1809,7 +1809,7 @@ main.api-main .lead { color: var(--fg-2); max-width: 58ch; margin: 14px 0 0; fon
 
 <section class="api-sec" id="activity">
   <h2>Activity</h2>
-  <p class="sub">Live-workout presence heartbeat</p>
+  <p class="sub">Live-workout presence heartbeat, and steps, sleep, heart rate and cardio sessions sent in from other devices (an iPhone Shortcut, Health Auto Export, a script) with the profile's ingest token.</p>
   <div class="eps">
 
 <details class="ep" id="op-postActivity">
@@ -1883,6 +1883,190 @@ main.api-main .lead { color: var(--fg-2); max-width: 58ch; margin: 14px 0 0; fon
   <div class="prow rrow">
     <span class="r-code s4">401</span>
     <span class="p-desc">No session, expired/revoked session, or a disabled account.<span class="r-sig"><code>{&quot;error&quot;:&quot;not signed in&quot;}</code></span></span>
+  </div>
+    </div>
+  </div>
+</details>
+
+<details class="ep" id="op-ingestTokenStatus">
+  <summary>
+    <span class="m get">GET</span>
+    <span class="ep-path"><code>/api/ingest/token</code></span>
+    <span class="ep-chev" aria-hidden="true"></span>
+    <span class="ep-sum">Whether the profile has an ingest token</span>
+  </summary>
+  <div class="ep-body">
+<p>Never the token itself: it is shown once, by <code>POST</code>, and only its SHA-256 is stored. <code>used</code> is when it last sent activity, to within ten minutes.</p>
+    <p class="ep-auth"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2.5"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><span>Requires a session: the cookie set at sign-in, or <code>Authorization: Bearer &lt;token&gt;</code> from mobile-app pairing.</span></p>
+
+
+    <p class="ep-h">Responses</p>
+    <div class="ptab">
+  <div class="prow rrow">
+    <span class="r-code s2">200</span>
+    <span class="p-desc">The token's state.<span class="r-sig">{ on: boolean, at: number, used: number }</span></span>
+  </div>
+  <div class="prow rrow">
+    <span class="r-code s4">401</span>
+    <span class="p-desc">No session, expired/revoked session, or a disabled account.<span class="r-sig"><code>{&quot;error&quot;:&quot;not signed in&quot;}</code></span></span>
+  </div>
+    </div>
+  </div>
+</details>
+
+<details class="ep" id="op-ingestTokenCreate">
+  <summary>
+    <span class="m post">POST</span>
+    <span class="ep-path"><code>/api/ingest/token</code></span>
+    <span class="ep-chev" aria-hidden="true"></span>
+    <span class="ep-sum">Make the profile's ingest token</span>
+  </summary>
+  <div class="ep-body">
+<p>Makes a new token and replaces any earlier one, which stops working at once. The token is in this answer only. It can send activity to this profile and do nothing else; &quot;sign out everywhere&quot; does not retire it, <code>DELETE</code> does.</p>
+    <p class="ep-auth"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2.5"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><span>Requires a session: the cookie set at sign-in, or <code>Authorization: Bearer &lt;token&gt;</code> from mobile-app pairing.</span></p>
+
+
+    <p class="ep-h">Responses</p>
+    <div class="ptab">
+  <div class="prow rrow">
+    <span class="r-code s2">200</span>
+    <span class="p-desc">The new token.<span class="r-sig">{ token: string, at: number }</span></span>
+  </div>
+  <div class="prow rrow">
+    <span class="r-code s4">401</span>
+    <span class="p-desc">No session, expired/revoked session, or a disabled account.<span class="r-sig"><code>{&quot;error&quot;:&quot;not signed in&quot;}</code></span></span>
+  </div>
+    </div>
+  </div>
+</details>
+
+<details class="ep" id="op-ingestTokenDelete">
+  <summary>
+    <span class="m delete">DELETE</span>
+    <span class="ep-path"><code>/api/ingest/token</code></span>
+    <span class="ep-chev" aria-hidden="true"></span>
+    <span class="ep-sum">Retire the profile's ingest token</span>
+  </summary>
+  <div class="ep-body">
+
+    <p class="ep-auth"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2.5"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><span>Requires a session: the cookie set at sign-in, or <code>Authorization: Bearer &lt;token&gt;</code> from mobile-app pairing.</span></p>
+
+
+    <p class="ep-h">Responses</p>
+    <div class="ptab">
+  <div class="prow rrow">
+    <span class="r-code s2">200</span>
+    <span class="p-desc">There is no token now (also when there was none).<span class="r-sig"><a href="#schema-Ok">Ok</a></span></span>
+  </div>
+  <div class="prow rrow">
+    <span class="r-code s4">401</span>
+    <span class="p-desc">No session, expired/revoked session, or a disabled account.<span class="r-sig"><code>{&quot;error&quot;:&quot;not signed in&quot;}</code></span></span>
+  </div>
+    </div>
+  </div>
+</details>
+
+<details class="ep" id="op-ingestActivity">
+  <summary>
+    <span class="m post">POST</span>
+    <span class="ep-path"><code>/api/ingest/activity</code></span>
+    <span class="ep-chev" aria-hidden="true"></span>
+    <span class="ep-sum">Send steps, sleep, heart rate and cardio sessions in</span>
+  </summary>
+  <div class="ep-body">
+<p>For a device the app cannot read itself, above all an iPhone (Apple Health is open only to native apps): an iOS Shortcut, Health Auto Export's REST automation, or a script. Merged into the stored profile the way the app merges an import, and the revision moves, so every signed-in device shows it on its next check:</p>
+<ul><li>a day is merged field by field (steps from one source and sleep from another both stay), and a field sent again with the same value changes nothing;</li><li>a session is added once: not again with the same id, nor when the profile has one of the same kind starting within two minutes, nor when it was deleted in the app.</li></ul>
+<p>Three shapes are accepted:</p>
+<ul><li><b>one day, flat</b> (what a Shortcut builds most easily): <code>date</code> (<code>YYYY-MM-DD</code>, default today), <code>steps</code>, <code>distanceKm</code> or <code>distanceMi</code> or <code>distM</code>, <code>activeKcal</code> or <code>activeKJ</code>, <code>restingHr</code>, <code>sleepHours</code> or <code>sleepMin</code>;</li><li><b>lists</b>: <code>days</code> (<code>d</code>, <code>steps</code>, <code>distM</code>, <code>activeKcal</code>, <code>restHr</code>, <code>sleepMin</code>) and <code>sessions</code> (<code>type</code> run/walk/ride/swim/hike/other or a name like &quot;Outdoor Run&quot;, <code>start</code>, <code>end</code> or <code>durS</code>, <code>distM</code>, <code>kcal</code>, <code>avgHr</code>, <code>maxHr</code>, <code>name</code>, <code>id</code>);</li><li><b>Health Auto Export</b> (<code>{&quot;data&quot;: {&quot;metrics&quot;: [...], &quot;workouts&quot;: [...]}}</code>): <code>step_count</code>, <code>walking_running_distance</code>, <code>active_energy</code>, <code>resting_heart_rate</code> and <code>sleep_analysis</code>, and its workouts; other metrics are ignored.</li></ul>
+<p>Numbers may be strings as a phone writes them (<code>&quot;8,123&quot;</code>, <code>&quot;5,2&quot;</code>). A day is the calendar date as written on the phone; a time without an offset, and a day left out, are placed with <code>tzOffsetMin</code> (minutes east of UTC), else UTC. <code>source</code> names where it came from (default <code>iPhone</code>, or <code>Apple Health</code> for Health Auto Export). At most 400 days and 500 sessions per request, 30 requests a minute per profile. The profile must have been opened on a device once (409 before).</p>
+    <p class="ep-auth"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2.5"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><span>Requires a session: the cookie set at sign-in, or <code>Authorization: Bearer &lt;token&gt;</code> from mobile-app pairing.</span></p>
+
+<p class="ep-h">Request body <span class="p-hint">(JSON)</span></p><div class="ptab">
+  <div class="prow">
+    <span class="p-name">date</span>
+    <span class="p-type">string</span>
+    <span class="p-desc"></span>
+  </div>
+  <div class="prow">
+    <span class="p-name">steps</span>
+    <span class="p-type">number | string</span>
+    <span class="p-desc"></span>
+  </div>
+  <div class="prow">
+    <span class="p-name">distanceKm</span>
+    <span class="p-type">number | string</span>
+    <span class="p-desc"></span>
+  </div>
+  <div class="prow">
+    <span class="p-name">activeKcal</span>
+    <span class="p-type">number | string</span>
+    <span class="p-desc"></span>
+  </div>
+  <div class="prow">
+    <span class="p-name">restingHr</span>
+    <span class="p-type">number | string</span>
+    <span class="p-desc"></span>
+  </div>
+  <div class="prow">
+    <span class="p-name">sleepHours</span>
+    <span class="p-type">number | string</span>
+    <span class="p-desc"></span>
+  </div>
+  <div class="prow">
+    <span class="p-name">tzOffsetMin</span>
+    <span class="p-type">integer</span>
+    <span class="p-desc"></span>
+  </div>
+  <div class="prow">
+    <span class="p-name">source</span>
+    <span class="p-type">string <span class="p-hint">(&le; 40 chars)</span></span>
+    <span class="p-desc"></span>
+  </div>
+  <div class="prow">
+    <span class="p-name">days</span>
+    <span class="p-type">object[]</span>
+    <span class="p-desc"></span>
+  </div>
+  <div class="prow">
+    <span class="p-name">sessions</span>
+    <span class="p-type">object[]</span>
+    <span class="p-desc"></span>
+  </div>
+  <div class="prow">
+    <span class="p-name">data</span>
+    <span class="p-type">object</span>
+    <span class="p-desc">Health Auto Export's body.</span>
+  </div>
+</div>
+<pre><code>{
+  &quot;date&quot;: &quot;2026-10-21&quot;,
+  &quot;steps&quot;: 8123,
+  &quot;distanceKm&quot;: 5.2,
+  &quot;activeKcal&quot;: 410,
+  &quot;restingHr&quot;: 55,
+  &quot;sleepHours&quot;: 7.2
+}</code></pre>
+    <p class="ep-h">Responses</p>
+    <div class="ptab">
+  <div class="prow rrow">
+    <span class="r-code s2">200</span>
+    <span class="p-desc">Merged. <code>days</code> and <code>sessions</code> count what changed; 0 and 0 left the profile as it was.<span class="r-sig">{ ok: boolean, days: integer, sessions: integer, rev: integer }</span></span>
+  </div>
+  <div class="prow rrow">
+    <span class="r-code s4">400</span>
+    <span class="p-desc">Not one of the accepted shapes, too many entries, or nothing to import.</span>
+  </div>
+  <div class="prow rrow">
+    <span class="r-code s4">401</span>
+    <span class="p-desc">No ingest token, a wrong or retired one, or a disabled account. A session is never accepted here.<span class="r-sig"><code>{&quot;error&quot;:&quot;invalid ingest token&quot;}</code></span></span>
+  </div>
+  <div class="prow rrow">
+    <span class="r-code s4">409</span>
+    <span class="p-desc">The profile has no stored document yet.</span>
+  </div>
+  <div class="prow rrow">
+    <span class="r-code s4">429</span>
+    <span class="p-desc">More than 30 requests in a minute.</span>
   </div>
     </div>
   </div>

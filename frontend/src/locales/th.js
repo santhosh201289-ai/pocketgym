@@ -902,6 +902,7 @@ export default {
   'Import from Hevy': 'นำเข้าจาก Hevy',
   'Import activity': 'นำเข้ากิจกรรม',
   'Import from Health Connect': 'นำเข้าจาก Health Connect',
+  'Send activity from iPhone': 'ส่งกิจกรรมจาก iPhone',
   'Pull your history with a Hevy Pro API key': 'ดึงประวัติด้วยคีย์ API ของ Hevy Pro',
   'Pull your history with a Hevy Pro API key. The key is only used for this import and is not saved.': 'ดึงประวัติด้วยคีย์ API ของ Hevy Pro คีย์ใช้สำหรับการนำเข้าครั้งนี้เท่านั้นและจะไม่ถูกบันทึก',
   'Hevy API key': 'คีย์ API ของ Hevy',

@@ -44,6 +44,7 @@ import { passwordOn, PasswordRow, openPasswordSignIn, openPasswordRegister } fro
 import { usePasskeys, PasskeysRow, DeviceLinkRow, openDeviceLinkRedeem } from '../components/Passkeys.jsx'
 import { Section, Row, SelectRow, Switch, Segmented, Button, TextField, SearchField } from '../components/ui.jsx'
 import { importActivityFiles } from '../components/Activity.jsx'
+import { IngestCard } from '../components/IngestCard.jsx'
 import { PAGES, ROOT_GROUPS, pageVisible, searchSettings, pageTrail } from './settings-pages.js'
 
 /* Settings (v1.3.11). The root is one screen: an account card, eleven rows that each open a page
@@ -796,6 +797,9 @@ export default function Settings({ page = null, find = null, via = null }) {
         {MOBILE && android && S.autoBackup && <BackupFolderRow />}
       </Section>
       {MOBILE ? android && <HealthConnectCard S={S} toast={toast} /> : <HealthConnectWebCard />}
+      {/* A profile on a server only: the Shortcut sends to it. Not on the Android app, which reads
+          Health Connect itself. */}
+      {user && !DEMO && !(MOBILE && android) && <IngestCard />}
       <Section title={t('Bring data in')}>
         <Row icon="download" iconTint="var(--teal)" title={t('Import backup')} accessory="chevron" onClick={() => fileRef.current.click()} />
         <Row icon="download" iconTint="var(--teal)" title={t('Import from another app')}
@@ -1474,7 +1478,7 @@ async function showHealthDiagnosis() {
 function HealthConnectWebCard() {
   return (
     <Section title={t('Health Connect')}
-      footer={t('On iPhone, use Import activity below with your Apple Health export.')}>
+      footer={t('On iPhone, use Send activity from iPhone below.')}>
       <Row icon="figureRun" iconTint="var(--orange)" title={t('Import from Health Connect')}
         subtitle={t('Steps, sleep and workouts from Google Fit, Samsung Health, Fitbit, Noise, Zepp and other bands come in through the Android app. Tap to get it, then turn this on there.')}
         accessory="chevron" onClick={() => window.open(APK_URL, '_blank', 'noopener')} />

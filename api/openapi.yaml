@@ -144,7 +144,10 @@ tags:
   - name: push
     description: Web Push (VAPID) subscriptions, rest-timer and test pushes
   - name: activity
-    description: Live-workout presence heartbeat
+    description: >-
+      Live-workout presence heartbeat, and steps, sleep, heart rate and cardio sessions sent
+      in from other devices (an iPhone Shortcut, Health Auto Export, a script) with the
+      profile's ingest token.
   - name: admin
     description: Admin dashboard. Requires an admin session (`ADMIN_UIDS` or `admin:true`)
   - name: media
@@ -2113,6 +2116,157 @@ paths:
               schema: { $ref: '#/components/schemas/Ok' }
         '401': { $ref: '#/components/responses/Unauthorized' }
 
+  /api/ingest/token:
+    get:
+      tags: [activity]
+      operationId: ingestTokenStatus
+      summary: Whether the profile has an ingest token
+      description: >-
+        Never the token itself: it is shown once, by `POST`, and only its SHA-256 is stored.
+        `used` is when it last sent activity, to within ten minutes.
+      responses:
+        '200':
+          description: The token's state.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [on]
+                properties:
+                  on: { type: boolean }
+                  at: { type: number, nullable: true, description: When it was made, ms since epoch. }
+                  used: { type: number, nullable: true, description: When it last sent activity, ms since epoch. }
+              example: { on: true, at: 1792569600000, used: 1792600000000 }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    post:
+      tags: [activity]
+      operationId: ingestTokenCreate
+      summary: Make the profile's ingest token
+      description: >-
+        Makes a new token and replaces any earlier one, which stops working at once. The
+        token is in this answer only. It can send activity to this profile and do nothing
+        else; "sign out everywhere" does not retire it, `DELETE` does.
+      responses:
+        '200':
+          description: The new token.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [token, at]
+                properties:
+                  token: { type: string, description: '`pgi_` and 32 random characters.' }
+                  at: { type: number }
+              example: { token: "pgi_3q2+7wAAbbccddeeffgghhiijjkkll", at: 1792569600000 }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    delete:
+      tags: [activity]
+      operationId: ingestTokenDelete
+      summary: Retire the profile's ingest token
+      responses:
+        '200':
+          description: There is no token now (also when there was none).
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Ok' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /api/ingest/activity:
+    post:
+      tags: [activity]
+      operationId: ingestActivity
+      summary: Send steps, sleep, heart rate and cardio sessions in
+      security:
+        - ingestToken: []
+      description: |
+        For a device the app cannot read itself, above all an iPhone (Apple Health is open
+        only to native apps): an iOS Shortcut, Health Auto Export's REST automation, or a
+        script. Merged into the stored profile the way the app merges an import, and the
+        revision moves, so every signed-in device shows it on its next check:
+
+        - a day is merged field by field (steps from one source and sleep from another both
+          stay), and a field sent again with the same value changes nothing;
+        - a session is added once: not again with the same id, nor when the profile has one
+          of the same kind starting within two minutes, nor when it was deleted in the app.
+
+        Three shapes are accepted:
+
+        - **one day, flat** (what a Shortcut builds most easily): `date` (`YYYY-MM-DD`,
+          default today), `steps`, `distanceKm` or `distanceMi` or `distM`, `activeKcal` or
+          `activeKJ`, `restingHr`, `sleepHours` or `sleepMin`;
+        - **lists**: `days` (`d`, `steps`, `distM`, `activeKcal`, `restHr`, `sleepMin`) and
+          `sessions` (`type` run/walk/ride/swim/hike/other or a name like "Outdoor Run",
+          `start`, `end` or `durS`, `distM`, `kcal`, `avgHr`, `maxHr`, `name`, `id`);
+        - **Health Auto Export** (`{"data": {"metrics": [...], "workouts": [...]}}`):
+          `step_count`, `walking_running_distance`, `active_energy`, `resting_heart_rate`
+          and `sleep_analysis`, and its workouts; other metrics are ignored.
+
+        Numbers may be strings as a phone writes them (`"8,123"`, `"5,2"`). A day is the
+        calendar date as written on the phone; a time without an offset, and a day left out,
+        are placed with `tzOffsetMin` (minutes east of UTC), else UTC. `source` names where
+        it came from (default `iPhone`, or `Apple Health` for Health Auto Export). At most
+        400 days and 500 sessions per request, 30 requests a minute per profile. The profile
+        must have been opened on a device once (409 before).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                date: { type: string, example: '2026-10-21' }
+                steps: { oneOf: [{ type: number }, { type: string }] }
+                distanceKm: { oneOf: [{ type: number }, { type: string }] }
+                activeKcal: { oneOf: [{ type: number }, { type: string }] }
+                restingHr: { oneOf: [{ type: number }, { type: string }] }
+                sleepHours: { oneOf: [{ type: number }, { type: string }] }
+                tzOffsetMin: { type: integer, example: 330 }
+                source: { type: string, maxLength: 40 }
+                days: { type: array, items: { type: object } }
+                sessions: { type: array, items: { type: object } }
+                data: { type: object, description: Health Auto Export's body. }
+            example:
+              date: '2026-10-21'
+              steps: 8123
+              distanceKm: 5.2
+              activeKcal: 410
+              restingHr: 55
+              sleepHours: 7.2
+      responses:
+        '200':
+          description: Merged. `days` and `sessions` count what changed; 0 and 0 left the profile as it was.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  days: { type: integer }
+                  sessions: { type: integer }
+                  rev: { type: integer }
+              example: { ok: true, days: 1, sessions: 0, rev: 42 }
+        '400':
+          description: Not one of the accepted shapes, too many entries, or nothing to import.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '401':
+          description: No ingest token, a wrong or retired one, or a disabled account. A session is never accepted here.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+              example: { error: "invalid ingest token" }
+        '409':
+          description: The profile has no stored document yet.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '429':
+          description: More than 30 requests in a minute.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
   /api/admin/users:
     get:
       tags: [admin]
@@ -2965,6 +3119,13 @@ components:
         Secure); the unprefixed `gymsid` is what a plain-http `localhost` instance
         uses, and is still accepted for pre-upgrade sessions. HttpOnly + SameSite=Lax;
         browser clients never handle the value directly.
+    ingestToken:
+      type: http
+      scheme: bearer
+      description: >-
+        The profile's ingest token (`pgi_…`, Settings → Data & backup → Send activity from
+        iPhone), carried as `Authorization: Bearer <token>`. It is accepted by
+        `POST /api/ingest/activity` only.
     bearerAuth:
       type: http
       scheme: bearer

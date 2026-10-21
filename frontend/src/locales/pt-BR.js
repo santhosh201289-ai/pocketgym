@@ -198,6 +198,7 @@ export const PT_BR_OVERRIDES = {
   'Import from Hevy': 'Importar do Hevy',
   'Import activity': 'Importar atividade',
   'Import from Health Connect': 'Importar do Health Connect',
+  'Send activity from iPhone': 'Enviar atividade do iPhone',
   'Pull your history with a Hevy Pro API key': 'Traga seu histórico com uma chave de API do Hevy Pro',
   'Pull your history with a Hevy Pro API key. The key is only used for this import and is not saved.': 'Traga seu histórico com uma chave de API do Hevy Pro. A chave só é usada nesta importação e não é salva.',
   'Hevy API key': 'Chave de API do Hevy',

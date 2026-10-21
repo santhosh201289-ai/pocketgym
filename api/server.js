@@ -33,6 +33,7 @@ import { createDeviceLink, findDeviceLink, burnDeviceLink, dropDeviceLinks } fro
 import { createMediaStore, mediaLimits, mediaConfig, MediaError, HASH_RE } from './media.js';
 import { effectiveRoutineId } from './queue.js';
 import { stampPut } from './sync-stamps.js';
+import { makeToken, hashToken, looksLikeToken, parseIngest, applyIngest, IngestError } from './ingest.js';
 import { atomicWrite as durableWrite } from './durable.js';
 import { excusedOn, nudgeFor, nudgeWindowOpen, toneOf } from './nudge.js';
 
@@ -196,6 +197,24 @@ function forClient(S) {
   if (!S || typeof S !== 'object' || !('_unstamped' in S || '_prior' in S)) return S;
   const { _unstamped, _prior, ...rest } = S;
   return rest;
+}
+// Stores `next` as the profile's document over `cur`, `step` revisions on (`_rev` is server-owned;
+// whatever a client sent is ignored), with a fresh write id and its ancestors'. PUT /api/data and
+// POST /api/ingest/activity are the only writers of a state file.
+function writeState(uid, cur, next, step = 1) {
+  next._rev = (cur?._rev || 0) + step;
+  next._wids = [...(Array.isArray(cur?._wids) ? cur._wids : []), ...(cur?._wid ? [cur._wid] : [])]
+    .filter(x => typeof x === 'string').slice(-WID_KEEP);
+  next._wid = crypto.randomBytes(8).toString('hex');
+  atomicWrite(stateFile(uid), JSON.stringify(next));
+  // The stat cache cannot see this write on its own: mtime granularity is 4 ms here (ext4 on
+  // this kernel — 3901 of 3999 back-to-back same-size writes shared one timestamp), and a
+  // `_rev` going from 7 to 8 does not change the file's size, so two writes inside one 4 ms
+  // tick are the same (mtimeMs, size) key. A reader that sampled between them would then serve
+  // the old revision until some later write happened to land on a different tick. Every write
+  // goes through here, so evicting here is the whole fix.
+  stateCache.delete(uid);
+  return next;
 }
 // An entry is an object a reader can dereference, and `records` is every entry of a stored
 // list. PUT /api/data drops the rest on the way in — a null workout, a routine that is a
@@ -937,13 +956,15 @@ if (AUDIT_ON) {
 // the whole instance: one client can pause *password* sign-in for everybody for a while, and the
 // per-name pause is what still protects each password.
 const AUTH_BURST = createWindow({ max: 60, windowMs: 60000 });
+// POST /api/ingest/activity, per profile: a Shortcut runs a few times a day, a backfill a few dozen.
+const INGEST_BURST = createWindow({ max: 30, windowMs: 60000 });
 const ADDR_FAILS = createBackoff({ free: 20, baseMs: 30000, maxMs: 15 * 60000, forgetMs: 3600000 });
 const ACCOUNT_FAILS = createBackoff({
   free: 5, baseMs: 60000, maxMs: 3600000, forgetMs: 24 * 3600000,
   // At most one per profile with a password, so this cannot grow without bound.
   keep: k => k.startsWith('acct:') && hasPassword(db.users.find(u => u.id === k.slice(5)))
 });
-setInterval(() => { AUTH_BURST.sweep(); ADDR_FAILS.sweep(); ACCOUNT_FAILS.sweep(); }, 60000).unref();
+setInterval(() => { AUTH_BURST.sweep(); INGEST_BURST.sweep(); ADDR_FAILS.sweep(); ACCOUNT_FAILS.sweep(); }, 60000).unref();
 
 // Route -> the kind of failure it can count. Every route listed here also spends the burst
 // budget; `null` spends only that.
@@ -2258,29 +2279,15 @@ const routes = {
     const report = {};
     try { stampPut(cur, body.state, { overRead: body.baseRev != null && body.baseRev === curRev, stamped: body.stamped === true, report }); }
     catch (e) { if (e instanceof RangeError) return json(res, 400, { error: 'invalid state' }); throw e; }
-    body.state._rev = curRev + 1;          // server-owned; whatever the client sent is ignored
     // A writer that does not stamp (an older app) takes the revision it is told for the document it
     // sent, and only reads the profile again once the revision moves. When the server put back
     // something it left out or set back (sync-stamps.js), the document stored is not that one: it
     // goes in one revision further, so the writer's next check of the revision (every half minute)
     // finds it moved and reads it, and its next push over the one it was told is a conflict to merge.
-    if (report.changed) body.state._rev = curRev + 2;
-    body.state._wids = [...(Array.isArray(cur?._wids) ? cur._wids : []), ...(cur?._wid ? [cur._wid] : [])]
-      .filter(x => typeof x === 'string').slice(-WID_KEEP);
-    body.state._wid = crypto.randomBytes(8).toString('hex');
     // JSON.parse takes any nesting, JSON.stringify recurses and runs out of stack on a document
     // nested some thousands deep. No client builds one; it is a bad request, not a server error.
-    let text;
-    try { text = JSON.stringify(body.state); }
+    try { writeState(user.id, cur, body.state, report.changed ? 2 : 1); }
     catch (e) { if (e instanceof RangeError) return json(res, 400, { error: 'invalid state' }); throw e; }
-    atomicWrite(stateFile(user.id), text);
-    // The stat cache cannot see this write on its own: mtime granularity is 4 ms here (ext4 on
-    // this kernel — 3901 of 3999 back-to-back same-size writes shared one timestamp), and a
-    // `_rev` going from 7 to 8 does not change the file's size, so two writes inside one 4 ms
-    // tick are the same (mtimeMs, size) key. A reader that sampled between them would then serve
-    // the old revision until some later write happened to land on a different tick. This is the
-    // only writer of a state file in the tree, so evicting here is the whole fix.
-    stateCache.delete(user.id);
     // Starts (or stops) the grace clock of every stored file this write stopped (or started)
     // referencing. Bookkeeping only: the state is already saved, so nothing here may turn a
     // successful write into an error.
@@ -2401,6 +2408,67 @@ const routes = {
       if (p && p.hiddenAt === undefined) p.hiddenAt = Date.now();
     } else presence.delete(user.id);
     json(res, 200, { ok: true });
+  },
+
+  /* ---------- activity sent in from other devices (ingest.js) ---------- */
+  // The profile's ingest token: what an iPhone Shortcut or Health Auto Export sends its steps,
+  // sleep and runs with. Only whether there is one, and when it was made and last used, is ever
+  // read back: the token itself is shown once, when it is made, and only its hash is kept.
+  'GET /api/ingest/token': async (req, res) => {
+    const user = readSession(req);
+    if (!user) return json(res, 401, { error: 'not signed in' });
+    const g = user.ingest;
+    json(res, 200, g?.hash ? { on: true, at: g.at || null, used: g.used || null } : { on: false });
+  },
+  // Makes a token, replacing the one before: a Shortcut set up with the old one stops working.
+  'POST /api/ingest/token': async (req, res) => {
+    const user = readSession(req);
+    if (!user) return json(res, 401, { error: 'not signed in' });
+    const token = makeToken();
+    user.ingest = { hash: hashToken(token), at: Date.now() };
+    saveDb();
+    audit(req, 'ingest.token', { user });
+    json(res, 200, { token, at: user.ingest.at });
+  },
+  'DELETE /api/ingest/token': async (req, res) => {
+    const user = readSession(req);
+    if (!user) return json(res, 401, { error: 'not signed in' });
+    if (user.ingest) { delete user.ingest; saveDb(); audit(req, 'ingest.revoke', { user }); }
+    json(res, 200, { ok: true });
+  },
+  // Authenticated by the ingest token alone (Authorization: Bearer pgi_…), never a session: no
+  // cookie is read, and a session token is refused like any other wrong one. It merges into the
+  // stored document the way the app merges an import and moves the revision, so every signed-in
+  // device picks the days up on its next check.
+  'POST /api/ingest/activity': async (req, res) => {
+    const auth = String(req.headers.authorization || '');
+    const tok = auth.startsWith('Bearer ') ? auth.slice(7).trim() : '';
+    const hash = looksLikeToken(tok) ? hashToken(tok) : null;
+    const user = hash && db.users.find(u => u.ingest?.hash === hash);
+    if (!user || user.disabled) return json(res, 401, { error: 'invalid ingest token' });
+    const wait = INGEST_BURST.take(user.id);
+    if (wait) return tooMany(res, wait);
+    const body = await readBody(req);
+    const now = Date.now();
+    let parsed;
+    try { parsed = parseIngest(body, { now }); }
+    catch (e) { if (e instanceof IngestError) return json(res, 400, { error: e.message }); throw e; }
+    if (!parsed.days.length && !parsed.sessions.length) return json(res, 400, { error: 'nothing to import: no day with steps, distance, energy, heart rate or sleep, and no session' });
+    const cur = readStateStrict(user.id);
+    if (cur === UNREADABLE) { console.error('state file unreadable for', user.id); return json(res, 503, { error: 'state unreadable' }); }
+    // A profile with no document yet has never been opened on a device: that first push builds
+    // it from the app's defaults, and one made here of nothing but activity would stand in for it.
+    if (!cur) return json(res, 409, { error: 'open Pocket Gym and sign in once before sending activity' });
+    const next = structuredClone(cur);
+    const got = applyIngest(next, parsed, now);
+    let rev = cur._rev || 0;
+    if (got.days || got.sessions) {
+      stampPut(cur, next, { stamped: true, overRead: true, now });
+      rev = writeState(user.id, cur, next)._rev;
+    }
+    // When it was last used, for Settings: written at most every ten minutes, like notePull.
+    if (!user.ingest.used || now - user.ingest.used >= PULL_NOTE_MS) { user.ingest.used = now; saveDb(); }
+    json(res, 200, { ok: true, days: got.days, sessions: got.sessions, rev });
   },
 
   /* ---------- admin dashboard ---------- */

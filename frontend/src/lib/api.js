@@ -35,6 +35,9 @@ const accessFor = base => (base && accessOrigin && originOf(base) === accessOrig
 const remoteHeaders = () => Object.assign({}, accessFor(remoteBase), remoteToken ? { Authorization: 'Bearer ' + remoteToken } : {})
 
 export { appBase }
+// The server's address as another device would type it: the paired phone's server, else where
+// this page is served from. What an iPhone Shortcut posts its activity to (components/IngestCard.jsx).
+export const serverBase = () => remoteBase || (typeof location !== 'undefined' ? location.origin + appBase().replace(/\/$/, '') : '')
 
 // How long one request may take before it counts as no answer at all. A black-holed connection
 // (captive portal, half-open socket, a phone between two networks) never settles on its own, and

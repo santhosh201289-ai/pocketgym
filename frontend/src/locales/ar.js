@@ -752,6 +752,7 @@ export default {
   'Import from Hevy': 'استيراد من Hevy',
   'Import activity': 'استيراد النشاط',
   'Import from Health Connect': 'استيراد من Health Connect',
+  'Send activity from iPhone': 'إرسال النشاط من iPhone',
   'Pull your history with a Hevy Pro API key': 'اسحب سجلك باستخدام مفتاح Hevy Pro API',
   'Pull your history with a Hevy Pro API key. The key is only used for this import and is not saved.': 'اسحب سجلك باستخدام مفتاح Hevy Pro API. يُستخدم المفتاح لهذا الاستيراد فقط ولا يُحفظ.',
   'Hevy API key': 'مفتاح Hevy API',

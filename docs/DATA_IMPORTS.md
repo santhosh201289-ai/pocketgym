@@ -82,6 +82,49 @@ the day takes the source that counted the most, as Health itself does, rather th
 
 You can also add a session or a day's steps, sleep and resting heart rate by hand from the Home card.
 
+## Activity from an iPhone, every day
+
+Apple Health can only be read by a native iPhone app, so instead the iPhone sends its numbers
+to your server. In **Settings → Data & backup → Send activity from iPhone**, tap **Create a
+token**. You get an address and an `Authorization` header to copy. The token is shown only once,
+and the server keeps only a hash of it. The token can add activity to your profile and nothing
+else. **Make a new token** replaces it and **Turn off** retires it; signing out everywhere does
+not.
+
+**With the Shortcuts app (free):**
+
+1. Create a new shortcut called "Pocket Gym".
+2. Add **Find Health Samples** with Type *Steps* and Start Date *is Today*, then **Calculate
+   Statistics** set to *Sum*. Do the same for *Walking + Running Distance* (km) and *Active
+   Energy* (kcal). Resting Heart Rate is optional: sort by Start Date, latest first, limit 1.
+3. Add **Format Date** with *Current Date* and the custom format `yyyy-MM-dd`.
+4. Add **Get Contents of URL** with the address. Set Method to *POST* and add the header
+   `Authorization: Bearer pgi_…`. Set Request Body to *JSON*, with the fields `date`, `steps`,
+   `distanceKm`, `activeKcal` and `restingHr`, each set to its result.
+5. Go to **Automation → Time of Day**, choose for example 22:00 daily, set it to *Run
+   Immediately*, and pick that shortcut.
+
+The shortcut can run as often as you like. Sending the same numbers again changes nothing, and a
+later run replaces that day's totals. Workouts are easiest from an Apple Health export (above) or,
+later, from Strava.
+
+**With [Health Auto Export](https://www.healthyapps.dev/) (paid, fully automatic):**
+
+- Add a *REST API* automation with the same address and header, in JSON format.
+- Pick Step Count, Walking + Running Distance, Active Energy, Resting Heart Rate, Sleep Analysis
+  and Workouts.
+- Pocket Gym reads that app's format as it is: steps per day, sleep on the day it ended, and
+  workouts as runs, rides, walks, swims and hikes.
+
+**From a script:** the request is `POST /api/ingest/activity`, and `api/openapi.yaml` lists every
+field. For example:
+
+```sh
+curl -X POST https://gym.example.com/api/ingest/activity \
+  -H "Authorization: Bearer pgi_…" -H "Content-Type: application/json" \
+  -d '{"date":"2026-10-21","steps":8123,"distanceKm":5.2,"activeKcal":410,"restingHr":55,"sleepHours":7.2}'
+```
+
 ## Sharing a plan
 
 On the **Plan** screen, tap the share icon:

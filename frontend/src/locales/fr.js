@@ -654,6 +654,7 @@ export default {
   'Import from Hevy': 'Importer depuis Hevy',
   'Import activity': 'Importer l’activité',
   'Import from Health Connect': 'Importer depuis Health Connect',
+  'Send activity from iPhone': 'Envoyer l’activité depuis l’iPhone',
   'Pull your history with a Hevy Pro API key': 'Récupérer l’historique avec une clé API Hevy Pro',
   'Pull your history with a Hevy Pro API key. The key is only used for this import and is not saved.': 'Récupérer l’historique avec une clé API Hevy Pro. La clé ne sert qu’à cet import et n’est pas enregistrée.',
   'Hevy API key': 'Clé API Hevy',

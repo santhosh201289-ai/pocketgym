@@ -643,6 +643,7 @@ export default {
   'Import from Hevy': '從 Hevy 匯入',
   'Import activity': '匯入活動',
   'Import from Health Connect': '從 Health Connect 匯入',
+  'Send activity from iPhone': '從 iPhone 傳送活動',
   'Pull your history with a Hevy Pro API key': '使用 Hevy Pro API 金鑰同步訓練紀錄',
   'Pull your history with a Hevy Pro API key. The key is only used for this import and is not saved.': '使用 Hevy Pro API 金鑰取得訓練紀錄。金鑰僅用於本次資料匯入，系統絕不儲存。',
   'Hevy API key': 'Hevy API 金鑰',
